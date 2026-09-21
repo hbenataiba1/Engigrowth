@@ -191,11 +191,11 @@ export default function Home() {
       reduceMotion
         ? {}
         : {
-            initial: "hidden",
-            whileInView: "visible",
+            initial: "hidden" as const,
+            whileInView: "visible" as const,
             viewport: { once: true, margin: "-80px" },
             variants: fadeUp,
-            transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+            transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
           },
     [reduceMotion],
   );
@@ -212,7 +212,7 @@ export default function Home() {
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 28 }}
           animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
           className="relative z-10"
         >
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/8 px-3 py-2 text-sm text-cyan-100 shadow-[0_0_50px_rgba(34,211,238,0.14)]">
@@ -682,7 +682,7 @@ function BrowserShowcase({ reduceMotion }: { reduceMotion: boolean }) {
     <motion.div
       initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 28 }}
       animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as const, delay: 0.08 }}
       className="relative z-10 mx-auto w-full max-w-[620px] lg:ml-auto"
     >
       <div className="absolute -left-8 top-16 hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-cyan-50 shadow-2xl backdrop-blur md:block">
