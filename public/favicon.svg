@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="EngiGrowth">
+  <rect width="64" height="64" rx="16" fill="#050914"/>
+  <path d="M14 40V20h27v7H22v4h17v7H22v4h20v7H14v-9Z" fill="#67e8f9"/>
+  <path d="M44 18h6v28h-6z" fill="#a78bfa"/>
+  <path d="M34 46h18v6H34z" fill="#ffffff"/>
+</svg>
