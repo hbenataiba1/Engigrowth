@@ -1,27 +1,23 @@
 "use client";
 
-import { type FormEvent, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { type FormEvent, type ReactNode, useState } from "react";
 import {
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
-  Check,
   ChevronRight,
-  Code2,
   ExternalLink,
   Gauge,
   LayoutTemplate,
+  type LucideIcon,
   MessageCircle,
-  MousePointer2,
-  PenTool,
+  MousePointerClick,
   Search,
   Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
-  Smartphone,
   Target,
-  TrendingUp,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,72 +35,81 @@ import { submitLead, type LeadPayload } from "@/lib/leads";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { trackConversion } from "@/lib/tracking";
 
+type FieldErrors = Partial<Record<keyof LeadPayload, string>>;
+
+type IconCard = {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  tag: string;
+};
+
 const navLinks = [
   { label: "Services", href: "#services" },
   { label: "Réalisations", href: "#realisations" },
-  { label: "Comment ça marche", href: "#processus" },
+  { label: "Méthode", href: "#processus" },
   { label: "Contact", href: "#contact" },
 ];
 
-const services = [
+const services: IconCard[] = [
   {
     title: "Site vitrine",
     description:
-      "Présentez votre entreprise, vos services et vos réalisations avec un site professionnel qui inspire confiance.",
+      "Présentez votre activité avec une page claire, crédible et facile à parcourir.",
     icon: LayoutTemplate,
-    accent: "from-sky-400 to-cyan-300",
-    metric: "Crédibilité",
+    tag: "Crédibilité",
   },
   {
-    title: "Site e-commerce",
+    title: "E-commerce",
     description:
-      "Présentez et vendez vos produits en ligne avec une expérience simple pour vos clients.",
+      "Mettez vos produits en valeur avec un parcours simple du catalogue au contact.",
     icon: ShoppingBag,
-    accent: "from-violet-400 to-fuchsia-300",
-    metric: "Vente en ligne",
+    tag: "Vente",
   },
   {
-    title: "Landing Page",
+    title: "Landing page",
     description:
-      "Transformez le trafic de vos campagnes publicitaires en demandes de contact et en prospects.",
+      "Transformez le trafic de vos campagnes en demandes de devis plus qualifiées.",
     icon: Target,
-    accent: "from-blue-400 to-indigo-300",
-    metric: "Conversion",
+    tag: "Conversion",
   },
   {
-    title: "Refonte de site",
+    title: "Refonte",
     description:
-      "Votre site existe déjà ? Modernisez son design, son contenu et son expérience utilisateur pour mieux représenter votre entreprise.",
+      "Modernisez votre site existant pour mieux refléter la qualité de votre entreprise.",
     icon: Sparkles,
-    accent: "from-cyan-300 to-emerald-300",
-    metric: "Modernisation",
+    tag: "Image",
   },
 ];
 
-const benefits = [
+const outcomes: IconCard[] = [
   {
-    title: "Une image professionnelle",
+    title: "Message plus lisible",
     description:
-      "Donnez une première impression à la hauteur de la qualité de vos services.",
+      "Vos visiteurs comprennent plus vite votre offre, vos avantages et la prochaine action.",
+    icon: Search,
+    tag: "Clarté",
+  },
+  {
+    title: "Confiance renforcée",
+    description:
+      "Vos preuves, services et coordonnées deviennent plus visibles et plus rassurants.",
     icon: ShieldCheck,
+    tag: "Preuve",
   },
   {
-    title: "Une expérience simple",
+    title: "Parcours fluide",
     description:
-      "Aidez vos visiteurs à trouver rapidement les informations dont ils ont besoin sur mobile comme sur ordinateur.",
-    icon: Smartphone,
+      "Chaque section guide naturellement le visiteur vers une demande de contact.",
+    icon: MousePointerClick,
+    tag: "Contact",
   },
   {
-    title: "Plus de demandes de contact",
+    title: "Base propre",
     description:
-      "Structurez votre site autour d'un objectif clair : transformer davantage de visiteurs en prospects.",
-    icon: TrendingUp,
-  },
-  {
-    title: "Un site rapide et optimisé",
-    description:
-      "Bénéficiez d'un site conçu avec de bonnes bases techniques pour la performance et le référencement.",
+      "Le site est pensé pour la rapidité, le mobile et les bases du référencement.",
     icon: Gauge,
+    tag: "Technique",
   },
 ];
 
@@ -112,52 +117,55 @@ const projects = [
   {
     name: "Atlas Conseil",
     industry: "Cabinet de conseil",
-    description:
-      "Site vitrine premium orienté prise de rendez-vous pour une activité B2B.",
-    color: "from-blue-500 via-cyan-400 to-slate-900",
+    description: "Site vitrine premium orienté prise de rendez-vous B2B.",
+    palette: "from-[#e2f7ee] via-[#fff1d8] to-[#ffe6d7]",
   },
   {
     name: "Casa Home",
     industry: "Immobilier",
-    description:
-      "Landing page claire pour présenter les biens, rassurer les visiteurs et générer des demandes.",
-    color: "from-violet-500 via-blue-500 to-slate-950",
+    description: "Landing page claire pour rassurer et générer des demandes.",
+    palette: "from-[#fff8e7] via-[#e7edff] to-[#dff6ee]",
   },
   {
     name: "Marrakech Atelier",
     industry: "Commerce en ligne",
-    description:
-      "Parcours e-commerce simple avec une mise en avant forte des produits et de la marque.",
-    color: "from-cyan-400 via-emerald-300 to-slate-950",
+    description: "Parcours e-commerce simple avec une marque bien mise en avant.",
+    palette: "from-[#ffe0d2] via-[#fff0bd] to-[#e2f7ee]",
   },
   {
     name: "Nour Santé",
     industry: "Service médical",
-    description:
-      "Interface rassurante, rapide sur mobile, pensée pour faciliter le contact.",
-    color: "from-indigo-400 via-sky-400 to-slate-950",
+    description: "Interface rassurante, rapide sur mobile, pensée pour le contact.",
+    palette: "from-[#ddf7ee] via-[#fff7ea] to-[#ffe6d7]",
   },
 ];
 
 const processSteps = [
   {
     number: "01",
-    title: "Parlez-nous de votre projet",
+    title: "Clarifier l'objectif",
     description:
-      "Expliquez-nous votre activité, vos objectifs et le type de site dont vous avez besoin.",
+      "Nous identifions votre activité, vos clients et ce que votre site doit provoquer.",
   },
   {
     number: "02",
-    title: "Recevez votre proposition",
+    title: "Construire le parcours",
     description:
-      "Nous étudions votre besoin et vous envoyons une proposition adaptée à votre projet.",
+      "Nous organisons le message, les sections et les appels à l'action autour d'un fil simple.",
   },
   {
     number: "03",
-    title: "Nous créons votre site",
+    title: "Mettre en ligne",
     description:
-      "Une fois la proposition validée, nous passons au design, au développement et à la mise en ligne.",
+      "Nous finalisons le design, les contenus, le mobile et les bases techniques avant publication.",
   },
+];
+
+const metricRows = [
+  ["100%", "mobile-first", "Votre site reste lisible sur les écrans de vos clients."],
+  ["4", "formats de site", "Vitrine, e-commerce, landing page ou refonte."],
+  ["48H", "pour cadrer", "Une proposition claire pour décider vite."],
+  ["24/7", "présence en ligne", "Votre entreprise reste trouvable et contactable."],
 ];
 
 const siteTypes = [
@@ -168,461 +176,270 @@ const siteTypes = [
   "Je ne sais pas encore",
 ];
 
-type FieldErrors = Partial<Record<keyof LeadPayload, string>>;
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 34 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const container = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.08,
-    },
-  },
-};
-
 export default function Home() {
-  const reduceMotion = useReducedMotion();
-  const motionProps = useMemo(
-    () =>
-      reduceMotion
-        ? {}
-        : {
-            initial: "hidden" as const,
-            whileInView: "visible" as const,
-            viewport: { once: true, margin: "-80px" },
-            variants: fadeUp,
-            transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
-          },
-    [reduceMotion],
-  );
-
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#050914] text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#fbf7ef] text-[#17211c]">
       <SiteBackground />
       <Header />
 
       <section
         id="accueil"
-        className="relative mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-12 px-5 pb-6 pt-24 sm:px-8 sm:pb-12 sm:pt-28 lg:min-h-[92vh] lg:grid-cols-[1.02fr_0.98fr] lg:px-10 lg:pb-20 lg:pt-32"
+        className="relative mx-auto w-full max-w-7xl px-5 pb-14 pt-28 sm:px-8 sm:pt-32 lg:px-10"
       >
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-          animate={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] as const }}
-          className="relative z-10"
-        >
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/8 px-3 py-2 text-sm text-cyan-100 shadow-[0_0_50px_rgba(34,211,238,0.14)]">
-            <Sparkles className="size-4 text-cyan-300" aria-hidden="true" />
-            Création de sites web pour entreprises au Maroc
-          </div>
-          <h1 className="max-w-4xl text-balance text-4xl font-semibold leading-[1.04] tracking-normal text-white sm:text-5xl lg:text-7xl">
-            Un site web professionnel qui transforme vos visiteurs en clients
-          </h1>
-          <div className="mt-5 max-w-2xl space-y-3 text-base leading-7 text-slate-300 sm:mt-7 sm:space-y-4 sm:text-lg sm:leading-8">
-            <p>
-              Vous avez besoin d&apos;un site pour présenter votre activité, attirer
-              de nouveaux clients et développer votre présence en ligne ?
-            </p>
-            <p>
-              Nous créons un site moderne, rapide et adapté à votre activité,
-              avec une proposition claire selon vos besoins et votre budget.
-            </p>
-          </div>
-          <div className="mt-6 flex flex-col gap-3 sm:mt-9 sm:flex-row">
-            <Button
-              asChild
-              size="lg"
-              className="h-12 rounded-full bg-cyan-300 px-6 text-base font-semibold text-slate-950 shadow-[0_18px_60px_rgba(34,211,238,0.28)] hover:bg-cyan-200 sm:h-14 sm:px-7"
-              onClick={() =>
-                trackConversion("proposal_cta_click", { placement: "hero" })
-              }
-            >
-              <a href="#contact">
-                Recevoir ma proposition gratuite
-                <ArrowRight className="size-5" aria-hidden="true" />
-              </a>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="h-12 rounded-full border-white/14 bg-white/6 px-6 text-base text-white hover:bg-white/12 hover:text-white sm:h-14 sm:px-7"
-            >
-              <a href="#realisations">Voir nos réalisations</a>
-            </Button>
-          </div>
-          <p className="mt-5 hidden text-sm text-slate-400 sm:block">
-            Sans engagement • Réponse rapide • Proposition adaptée à votre projet
-          </p>
-        </motion.div>
-
-        <div className="hidden lg:block">
-          <BrowserShowcase reduceMotion={Boolean(reduceMotion)} />
-        </div>
-      </section>
-
-      <motion.section
-        {...motionProps}
-        className="relative mx-auto w-full max-w-7xl px-5 py-16 sm:px-8 lg:px-10"
-      >
-        <div className="grid items-center gap-8 rounded-[32px] border border-white/10 bg-white/[0.035] p-6 shadow-[0_28px_120px_rgba(0,0,0,0.28)] backdrop-blur md:grid-cols-[0.9fr_1.1fr] md:p-10 lg:p-12">
+        <div className="grid items-end gap-10 lg:grid-cols-[1.08fr_0.92fr]">
           <div>
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-              Présence en ligne
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e2d8c9] bg-white/76 px-3 py-2 text-sm font-medium shadow-[0_14px_45px_rgba(72,48,30,0.08)] backdrop-blur">
+              <Sparkles className="size-4 text-[#ff6b4a]" aria-hidden="true" />
+              Studio web pour entreprises ambitieuses au Maroc
+            </div>
+            <h1 className="max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
+              Des sites qui donnent à votre entreprise une vraie présence.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-[#5f665d] sm:text-lg sm:leading-8">
+              EngiGrowth transforme votre offre en expérience claire, élégante et
+              convaincante, avec une direction visuelle propre à votre activité.
             </p>
-            <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-4xl">
-              Votre site web doit vous aider à développer votre activité
-            </h2>
-            <Button
-              asChild
-              className="mt-8 h-12 rounded-full bg-white text-slate-950 hover:bg-cyan-100"
-              onClick={() =>
-                trackConversion("whatsapp_click", {
-                  placement: "value_section",
-                })
-              }
-            >
-              <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer">
-                Discuter de mon projet
-                <MessageCircle className="size-4" aria-hidden="true" />
-              </a>
-            </Button>
           </div>
-          <div className="grid gap-4 text-slate-300 sm:grid-cols-2">
-            {[
-              "Un site ne doit pas simplement être beau.",
-              "Vos futurs clients doivent comprendre rapidement ce que vous proposez, pourquoi ils devraient vous faire confiance et comment vous contacter.",
-              "Si votre entreprise n'a pas encore de site, ou si votre site actuel ne reflète plus la qualité de votre activité, vous risquez de perdre des clients qui cherchent déjà vos services en ligne.",
-              "Nous vous aidons à construire une présence en ligne professionnelle qui donne envie de passer à l'action.",
-            ].map((text, index) => (
-              <div
-                key={text}
-                className="rounded-3xl border border-white/10 bg-slate-950/40 p-5"
-              >
-                <span className="mb-5 flex size-10 items-center justify-center rounded-2xl bg-cyan-300/12 text-sm font-semibold text-cyan-200">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <p className="leading-7">{text}</p>
+          <div className="relative rounded-[34px_10px_34px_10px] border border-[#e2d8c9] bg-white/80 p-3 shadow-[0_28px_90px_rgba(72,48,30,0.16)] backdrop-blur">
+            <div className="absolute -left-5 -top-5 hidden rounded-full bg-[#18c6a4] px-4 py-2 text-sm font-semibold text-[#17211c] shadow-lg sm:block">
+              Brief express
+            </div>
+            <div className="rounded-[26px_8px_26px_8px] bg-[#17211c] p-4 text-white">
+              <div className="flex items-center gap-3 rounded-full bg-white/8 px-4 py-3 text-sm text-white/72">
+                <Search className="size-5 shrink-0 text-[#ffb45f]" aria-hidden="true" />
+                <span>Site vitrine, e-commerce, landing page ou refonte</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      <motion.section
-        id="services"
-        initial={reduceMotion ? false : "hidden"}
-        whileInView={reduceMotion ? undefined : "visible"}
-        viewport={{ once: true, margin: "-80px" }}
-        variants={container}
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
-      >
-        <motion.div variants={fadeUp} className="max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-            Services
-          </p>
-          <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-            Un site pensé pour votre entreprise
-          </h2>
-        </motion.div>
-        <div className="mt-10 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
-          <motion.article
-            variants={fadeUp}
-            className="group relative min-h-[420px] overflow-hidden rounded-[32px] border border-cyan-300/18 bg-cyan-300/8 p-7 shadow-[0_30px_120px_rgba(8,145,178,0.16)] md:p-9"
-          >
-            <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_30%_10%,rgba(34,211,238,0.35),transparent_50%)]" />
-            <div className="relative flex h-full flex-col justify-between">
-              <div>
-                <span className="flex size-14 items-center justify-center rounded-3xl bg-cyan-300 text-slate-950">
-                  <Target className="size-7" aria-hidden="true" />
-                </span>
-                <h3 className="mt-8 max-w-lg text-3xl font-semibold leading-tight sm:text-4xl">
-                  Une landing page conçue pour transformer vos campagnes en
-                  opportunités commerciales.
-                </h3>
-                <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
-                  Structure claire, message précis, preuve visible et appel à
-                  l&apos;action constant pour aider vos visiteurs à passer au contact.
-                </p>
-              </div>
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
-                {["Clarté", "Confiance", "Contact"].map((item) => (
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {["Message", "Design", "Contact"].map((item) => (
                   <span
                     key={item}
-                    className="rounded-2xl border border-white/10 bg-white/7 px-4 py-3 text-sm text-cyan-50"
+                    className="rounded-[18px_6px_18px_6px] bg-white px-3 py-4 text-center text-xs font-semibold text-[#17211c]"
                   >
                     {item}
                   </span>
                 ))}
               </div>
-            </div>
-          </motion.article>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {services.map((service) => (
-              <motion.article
-                key={service.title}
-                variants={fadeUp}
-                className="group rounded-[28px] border border-white/10 bg-white/[0.045] p-6 transition duration-300 hover:-translate-y-1 hover:border-cyan-200/30 hover:bg-white/[0.07]"
+              <Button
+                asChild
+                className="mt-4 h-12 w-full rounded-full bg-[#ff6b4a] px-6 font-semibold text-white shadow-[0_10px_30px_rgba(255,107,74,0.28)] hover:bg-[#ec5738]"
+                onClick={() =>
+                  trackConversion("proposal_cta_click", { placement: "hero" })
+                }
               >
-                <div
-                  className={`mb-6 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${service.accent} text-slate-950`}
-                >
-                  <service.icon className="size-6" aria-hidden="true" />
-                </div>
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-200/80">
-                  {service.metric}
-                </p>
-                <h3 className="text-xl font-semibold">{service.title}</h3>
-                <p className="mt-3 leading-7 text-slate-300">
-                  {service.description}
-                </p>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      <motion.section
-        {...motionProps}
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
-      >
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-          <div>
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-              Résultats
-            </p>
-            <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-              Votre site doit faire plus que présenter votre entreprise
-            </h2>
-            <div className="mt-8 overflow-hidden rounded-[30px] border border-white/10 bg-slate-950/50 p-4">
-              <div className="rounded-[24px] bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 p-5">
-                <div className="mb-5 flex items-center justify-between">
-                  <span className="text-sm text-slate-400">
-                    Parcours visiteur
-                  </span>
-                  <span className="rounded-full bg-cyan-300/12 px-3 py-1 text-xs text-cyan-200">
-                    Optimisé
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {[
-                    "Arrive sur mobile",
-                    "Comprend l'offre",
-                    "Fait confiance",
-                    "Demande un contact",
-                  ].map((step, index) => (
-                    <div
-                      key={step}
-                      className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.045] px-4 py-3"
-                    >
-                      <span className="flex size-8 items-center justify-center rounded-full bg-cyan-300 text-sm font-semibold text-slate-950">
-                        {index + 1}
-                      </span>
-                      <span className="text-sm text-slate-200">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                <a href="#contact">
+                  Obtenir une proposition
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </a>
+              </Button>
             </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {benefits.map((benefit) => (
-              <article
-                key={benefit.title}
-                className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6"
-              >
-                <benefit.icon
-                  className="mb-5 size-7 text-cyan-300"
-                  aria-hidden="true"
-                />
-                <h3 className="text-xl font-semibold">{benefit.title}</h3>
-                <p className="mt-3 leading-7 text-slate-300">
-                  {benefit.description}
-                </p>
-              </article>
-            ))}
-          </div>
         </div>
-      </motion.section>
 
-      <motion.section
-        id="realisations"
-        initial={reduceMotion ? false : "hidden"}
-        whileInView={reduceMotion ? undefined : "visible"}
-        viewport={{ once: true, margin: "-80px" }}
-        variants={container}
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
-      >
-        <motion.div
-          variants={fadeUp}
-          className="flex flex-col justify-between gap-5 md:flex-row md:items-end"
-        >
-          <div className="max-w-3xl">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-              Réalisations
-            </p>
-            <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-              Quelques projets que nous avons réalisés
-            </h2>
-          </div>
-          <p className="max-w-md leading-7 text-slate-300">
-            Découvrez une sélection de sites conçus pour répondre à différents
-            objectifs : présenter une entreprise, générer des prospects, vendre
-            en ligne ou lancer un nouveau service.
-          </p>
-        </motion.div>
-        <div className="mt-10 grid gap-5 lg:grid-cols-2">
-          {projects.map((project, index) => (
-            <motion.article
-              key={project.name}
-              variants={fadeUp}
-              tabIndex={0}
-              onFocus={() =>
-                trackConversion("portfolio_view", { project: project.name })
-              }
-              onMouseEnter={() =>
-                trackConversion("portfolio_view", { project: project.name })
-              }
-              className="group overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.045] outline-none transition duration-300 hover:-translate-y-1 hover:border-cyan-300/30 focus-visible:ring-2 focus-visible:ring-cyan-300"
-            >
-              <ProjectPreview project={project} index={index} />
-              <div className="p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-2xl font-semibold">{project.name}</h3>
-                    <p className="mt-1 text-sm text-cyan-200">
-                      {project.industry}
-                    </p>
-                  </div>
-                  <span className="flex size-11 items-center justify-center rounded-full border border-white/10 text-slate-300 transition group-hover:border-cyan-300/40 group-hover:text-cyan-200">
-                    <ExternalLink className="size-4" aria-hidden="true" />
-                  </span>
-                </div>
-                <p className="mt-4 leading-7 text-slate-300">
-                  {project.description}
-                </p>
-              </div>
-            </motion.article>
-          ))}
-        </div>
-      </motion.section>
-
-      <motion.section
-        id="processus"
-        {...motionProps}
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
-      >
-        <div className="max-w-3xl">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-            Comment ça marche
-          </p>
-          <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-            Créer votre site peut être simple
-          </h2>
-          <p className="mt-5 text-lg leading-8 text-slate-300">
-            Vous n&apos;avez pas besoin de connaître le design, le développement ou
-            les aspects techniques. Nous nous occupons de la réalisation et vous
-            gardez une vision claire de l&apos;avancement de votre projet.
-          </p>
-        </div>
-        <div className="relative mt-12 grid gap-5 lg:grid-cols-3">
-          <div className="absolute left-8 right-8 top-12 hidden h-px bg-gradient-to-r from-cyan-300/0 via-cyan-300/50 to-cyan-300/0 lg:block" />
-          {processSteps.map((step) => (
-            <article
-              key={step.number}
-              className="relative rounded-[28px] border border-white/10 bg-slate-950/60 p-6"
-            >
-              <span className="mb-8 flex size-16 items-center justify-center rounded-3xl border border-cyan-300/30 bg-cyan-300/10 text-xl font-semibold text-cyan-200">
-                {step.number}
-              </span>
-              <h3 className="text-2xl font-semibold">{step.title}</h3>
-              <p className="mt-4 leading-7 text-slate-300">{step.description}</p>
-            </article>
-          ))}
-        </div>
-        <Button
-          asChild
-          size="lg"
-          className="mt-9 h-13 rounded-full bg-cyan-300 px-7 text-slate-950 hover:bg-cyan-200"
-          onClick={() =>
-            trackConversion("proposal_cta_click", { placement: "process" })
-          }
-        >
-          <a href="#contact">
-            Recevoir ma proposition gratuite
-            <ArrowRight className="size-5" aria-hidden="true" />
-          </a>
-        </Button>
-      </motion.section>
-
-      <section
-        id="contact"
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
-      >
-        <div className="grid gap-8 rounded-[34px] border border-cyan-300/18 bg-[linear-gradient(135deg,rgba(8,47,73,0.84),rgba(15,23,42,0.94))] p-5 shadow-[0_32px_130px_rgba(14,165,233,0.14)] sm:p-8 lg:grid-cols-[0.92fr_1.08fr] lg:p-10">
-          <div className="flex flex-col justify-between gap-10">
-            <div>
-              <p className="mb-4 text-sm font-semibold uppercase tracking-[0.16em] text-cyan-200">
-                Proposition gratuite
-              </p>
-              <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-                Vous avez déjà une idée ? Transformons-la en site web.
-              </h2>
-              <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
-                Parlez-nous de votre projet et recevez une première proposition
-                adaptée à vos besoins.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              {["Simple", "Rapide", "Adapté"].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-white/10 bg-white/[0.06] p-4"
-                >
-                  <Check className="mb-3 size-5 text-cyan-300" aria-hidden="true" />
-                  <p className="font-medium">{item}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <LeadForm />
+        <div className="mt-12 grid gap-5 lg:grid-cols-[0.95fr_1.2fr_0.85fr]">
+          <HeroCard
+            title="Une présence en ligne qui rassure."
+            description="Message, preuve et contact réunis dans un parcours clair."
+            purple
+          />
+          <SearchDashboard />
+          <HeroCard
+            title="Un site construit pour générer des demandes."
+            description="Chaque section prépare le visiteur à vous écrire ou vous appeler."
+          />
         </div>
       </section>
 
-      <motion.section
-        {...motionProps}
+      <LogoStrip />
+
+      <section className="relative mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
+        <div className="grid overflow-hidden rounded-[32px_10px_32px_10px] bg-[#17211c] text-white shadow-[0_26px_90px_rgba(72,48,30,0.18)] lg:grid-cols-[0.88fr_1.12fr]">
+          <div className="relative flex min-h-[360px] flex-col justify-between p-8 sm:p-10 lg:p-12">
+            <div>
+              <SectionEyebrow dark>Votre avantage</SectionEyebrow>
+              <h2 className="max-w-md text-balance text-4xl font-semibold leading-[0.98] sm:text-5xl">
+                Une image qui semble déjà installée.
+              </h2>
+              <p className="mt-6 max-w-lg text-base leading-7 text-white/70">
+                Votre site doit ressembler à une entreprise prête, structurée et
+                facile à choisir, pas à une simple brochure en ligne.
+              </p>
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              className="mt-8 h-11 w-fit rounded-full border-white/20 bg-transparent px-5 text-white hover:bg-white hover:text-[#17211c]"
+              onClick={() =>
+                trackConversion("whatsapp_click", { placement: "advantage" })
+              }
+            >
+              <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer">
+                Discuter du projet
+                <MessageCircle className="size-4" aria-hidden="true" />
+              </a>
+            </Button>
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 h-24 bg-[repeating-linear-gradient(135deg,rgba(255,180,95,0.62)_0_3px,transparent_3px_14px)]"
+            />
+          </div>
+          <div className="relative min-h-[360px] bg-[linear-gradient(120deg,rgba(24,198,164,0.16),rgba(255,107,74,0.22),rgba(255,180,95,0.14))] p-4 sm:p-6 lg:p-8">
+            <AnalyticsPanel />
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="services"
         className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
       >
-        <div className="overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.045] p-7 text-center sm:p-10 lg:p-14">
-          <div className="mx-auto mb-7 flex size-16 items-center justify-center rounded-3xl bg-cyan-300 text-slate-950">
-            <MessageCircle className="size-8" aria-hidden="true" />
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div className="max-w-3xl">
+            <SectionEyebrow>Solutions</SectionEyebrow>
+            <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+              Des pages qui rendent votre offre évidente.
+            </h2>
           </div>
-          <h2 className="text-balance text-3xl font-semibold leading-tight sm:text-5xl">
-            Vous préférez en discuter directement ?
+          <div className="hidden gap-2 md:flex" aria-hidden="true">
+            <span className="flex size-10 items-center justify-center rounded-full border border-[#cdd5cc]">
+              <ChevronRight className="size-4 rotate-180" />
+            </span>
+            <span className="flex size-10 items-center justify-center rounded-full border border-[#cdd5cc]">
+              <ChevronRight className="size-4" />
+            </span>
+          </div>
+        </div>
+        <div className="mt-9 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {services.map((service, index) => (
+            <ServiceCard key={service.title} service={service} index={index} />
+          ))}
+        </div>
+      </section>
+
+      <section className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.72fr_1.28fr] lg:px-10">
+        <div>
+          <SectionEyebrow>Base de croissance</SectionEyebrow>
+          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            Les signaux dont votre site a besoin pour convertir.
           </h2>
-          <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            Expliquez-nous votre projet sur WhatsApp et échangeons sur la
-            meilleure solution pour votre activité.
+        </div>
+        <div className="space-y-3">
+          {metricRows.map(([value, label, note], index) => (
+            <MetricRow
+              key={label}
+              value={value}
+              label={label}
+              note={note}
+              active={index === 0 || index === 3}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="relative py-20">
+        <div className="relative overflow-hidden bg-[#101910] px-5 py-20 text-white sm:px-8 lg:px-10">
+          <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-2xl text-center">
+                <SectionEyebrow dark>Carte de conversion</SectionEyebrow>
+              <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+                Une lecture visuelle de ce qui bloque ou déclenche le contact.
+              </h2>
+              <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-white/65">
+                Le design sert à montrer où renforcer votre message, vos preuves
+                et vos appels à l'action.
+              </p>
+            </div>
+            <div className="mx-auto mt-12 max-w-5xl rounded-[30px_10px_30px_10px] bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_90px_rgba(0,0,0,0.22)] sm:p-7">
+              <VisibilityChart />
+            </div>
+          </div>
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 bottom-0 h-28 bg-[repeating-linear-gradient(135deg,rgba(255,180,95,0.92)_0_3px,transparent_3px_12px)] opacity-80"
+          />
+        </div>
+      </section>
+
+      <section
+        id="realisations"
+        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
+      >
+        <div className="max-w-3xl">
+          <SectionEyebrow>Réalisations</SectionEyebrow>
+          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            Une direction visuelle adaptée à chaque activité.
+          </h2>
+        </div>
+        <div className="mt-9 grid gap-4 lg:grid-cols-2">
+          {projects.map((project, index) => (
+            <ProjectCard key={project.name} project={project} index={index} />
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="processus"
+        className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10"
+      >
+        <div>
+          <SectionEyebrow>Méthode</SectionEyebrow>
+          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            Un projet cadré sans complexité inutile.
+          </h2>
+        </div>
+        <div className="grid gap-3">
+          {processSteps.map((step) => (
+            <article
+              key={step.number}
+              className="grid gap-4 rounded-[26px_8px_26px_8px] border border-[#e2d8c9] bg-white p-5 sm:grid-cols-[5rem_1fr]"
+            >
+              <p className="text-4xl font-semibold leading-none text-[#ff6b4a]">
+                {step.number}
+              </p>
+              <div>
+                <h3 className="text-xl font-semibold">{step.title}</h3>
+                <p className="mt-2 leading-7 text-[#53605a]">
+                  {step.description}
+                </p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="contact"
+        className="relative mx-auto grid w-full max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10"
+      >
+        <div>
+          <SectionEyebrow>Get started</SectionEyebrow>
+          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            Lancez votre site avec EngiGrowth.
+          </h2>
+          <p className="mt-5 max-w-md leading-7 text-[#53605a]">
+            Décrivez votre projet en quelques mots. Nous vous répondrons avec une
+            proposition adaptée à votre activité, votre objectif et votre budget.
           </p>
           <Button
             asChild
-            size="lg"
-            className="mt-8 h-14 rounded-full bg-white px-7 text-base text-slate-950 hover:bg-cyan-100"
+            variant="outline"
+            className="mt-7 h-11 rounded-full border-[#e2d8c9] bg-white px-5 text-[#17211c] hover:bg-[#17211c] hover:text-white"
             onClick={() =>
-              trackConversion("whatsapp_click", { placement: "final_cta" })
+              trackConversion("whatsapp_click", { placement: "contact" })
             }
           >
             <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer">
-              Discuter de mon projet sur WhatsApp
-              <MessageCircle className="size-5" aria-hidden="true" />
+              Écrire sur WhatsApp
+              <MessageCircle className="size-4" aria-hidden="true" />
             </a>
           </Button>
+          <div className="mt-10 grid gap-3">
+            {outcomes.map((outcome) => (
+              <OutcomeItem key={outcome.title} outcome={outcome} />
+            ))}
+          </div>
         </div>
-      </motion.section>
+        <LeadForm />
+      </section>
 
       <Footer />
       <MobileStickyCta />
@@ -632,165 +449,314 @@ export default function Home() {
 
 function Header() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-[#050914]/78 backdrop-blur-xl">
-      <nav className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-        <a href="#accueil" className="flex items-center gap-3" aria-label="Accueil">
-          <span className="flex size-10 items-center justify-center rounded-2xl bg-cyan-300 text-sm font-black text-slate-950">
-            EG
-          </span>
-          <span className="text-lg font-semibold tracking-normal">
-            {SITE_CONFIG.brand}
-          </span>
-        </a>
-        <div className="hidden items-center gap-7 text-sm text-slate-300 md:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="transition hover:text-white"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
-        <Button
-          asChild
-          className="hidden h-11 rounded-full bg-white px-5 text-slate-950 hover:bg-cyan-100 md:inline-flex"
-          onClick={() =>
-            trackConversion("proposal_cta_click", { placement: "nav" })
-          }
-        >
-          <a href="#contact">Recevoir ma proposition</a>
-        </Button>
-        <Button
-          asChild
-          size="icon"
-          variant="outline"
-          className="rounded-full border-white/12 bg-white/5 text-white hover:bg-white/10 md:hidden"
-        >
-          <a href="#contact" aria-label="Recevoir ma proposition">
-            <Send className="size-4" aria-hidden="true" />
+    <header className="fixed inset-x-0 top-0 z-50">
+      <div className="bg-[#17211c] px-5 py-2 text-center text-xs font-semibold text-[#fff7ea]">
+        Sites web clairs, rapides et distinctifs pour entreprises au Maroc
+      </div>
+      <nav className="border-b border-[#e2d8c9]/80 bg-[#fbf7ef]/86 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+          <a href="#accueil" className="flex items-center gap-3" aria-label="Accueil">
+            <img
+              src="/logo-engigrowth.png"
+              alt=""
+              className="size-11 rounded-[16px_5px_16px_5px] bg-[#17211c] object-contain p-1"
+            />
+            <span className="text-base font-semibold tracking-normal">
+              {SITE_CONFIG.brand}
+            </span>
           </a>
-        </Button>
+          <div className="hidden items-center gap-7 text-sm font-medium text-[#4f5b54] md:flex">
+            {navLinks.map((link) => (
+              <a key={link.href} href={link.href} className="transition hover:text-[#17211c]">
+                {link.label}
+              </a>
+            ))}
+          </div>
+          <Button
+            asChild
+            className="hidden h-10 rounded-full bg-[#17211c] px-5 text-white hover:bg-[#2b372f] md:inline-flex"
+            onClick={() =>
+              trackConversion("proposal_cta_click", { placement: "nav" })
+            }
+          >
+            <a href="#contact">Recevoir une proposition</a>
+          </Button>
+          <Button
+            asChild
+            size="icon"
+            variant="outline"
+            className="rounded-full border-[#e2d8c9] bg-white text-[#17211c] hover:bg-[#17211c] hover:text-white md:hidden"
+          >
+            <a href="#contact" aria-label="Recevoir une proposition">
+              <Send className="size-4" aria-hidden="true" />
+            </a>
+          </Button>
+        </div>
       </nav>
     </header>
   );
 }
 
-function BrowserShowcase({ reduceMotion }: { reduceMotion: boolean }) {
+function HeroCard({
+  title,
+  description,
+  purple = false,
+}: {
+  title: string;
+  description: string;
+  purple?: boolean;
+}) {
   return (
-    <motion.div
-      initial={reduceMotion ? false : { opacity: 0, scale: 0.96, y: 28 }}
-      animate={reduceMotion ? undefined : { opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] as const, delay: 0.08 }}
-      className="relative z-10 mx-auto w-full max-w-[620px] lg:ml-auto"
+    <article
+      className={`min-h-[300px] rounded-[28px_8px_28px_8px] border p-6 ${
+        purple
+          ? "border-[#ffb18b] bg-[linear-gradient(135deg,#ffdfb8_0%,#ff8a64_62%,#fff3df_100%)]"
+          : "border-[#e2d8c9] bg-white"
+      }`}
     >
-      <div className="absolute -left-8 top-16 hidden rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-cyan-50 shadow-2xl backdrop-blur md:block">
-        <div className="flex items-center gap-2">
-          <MousePointer2 className="size-4 text-cyan-300" aria-hidden="true" />
-          Demande envoyée
+      <div className="flex h-full flex-col justify-between">
+        <div>
+          <h2 className="max-w-xs text-2xl font-semibold leading-tight">
+            {title}
+          </h2>
+          <p className="mt-5 text-sm leading-6 text-[#5f665d]">{description}</p>
         </div>
+        <Button
+          asChild
+          className={`mt-8 h-11 w-fit rounded-full px-5 ${
+            purple
+              ? "bg-white text-[#17211c] hover:bg-[#17211c] hover:text-white"
+              : "bg-[#17211c] text-white hover:bg-[#2b372f]"
+          }`}
+          onClick={() =>
+            trackConversion("proposal_cta_click", {
+              placement: purple ? "hero_left" : "hero_right",
+            })
+          }
+        >
+          <a href="#contact">
+            Commencer
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </a>
+        </Button>
       </div>
-      <motion.div
-        animate={reduceMotion ? undefined : { y: [0, -12, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -right-2 bottom-14 hidden rounded-3xl border border-cyan-300/20 bg-slate-950/84 p-4 shadow-[0_24px_80px_rgba(34,211,238,0.16)] backdrop-blur md:block"
-      >
-        <div className="mb-3 flex items-center gap-2 text-sm text-slate-200">
-          <BarChart3 className="size-4 text-cyan-300" aria-hidden="true" />
-          Prospects
+    </article>
+  );
+}
+
+function SearchDashboard() {
+  return (
+    <article className="relative rounded-[10px_32px_10px_32px] border border-[#e2d8c9] bg-white p-5 shadow-[0_22px_70px_rgba(72,48,30,0.12)]">
+      <div aria-hidden="true" className="absolute -right-3 -top-3 size-20 rounded-full bg-[#18c6a4]/18" />
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold">Atelier de clarté</p>
+          <p className="text-xs text-[#6b776f]">Message, preuve, contact</p>
         </div>
-        <div className="flex h-24 items-end gap-2">
-          {[42, 60, 48, 82, 72, 96].map((height) => (
+        <span className="rounded-full bg-[#fff0d6] px-3 py-1 text-xs font-semibold text-[#8f4c24]">
+          Prêt
+        </span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          ["Visibilité", "87", "+12%"],
+          ["Mobile", "96", "Rapide"],
+          ["Contact", "4.2x", "Plus clair"],
+        ].map(([label, value, chip]) => (
+          <div key={label} className="rounded-[22px_7px_22px_7px] border border-[#efe2d2] bg-[#fffaf2] p-4">
+            <p className="text-xs font-medium text-[#6b776f]">{label}</p>
+            <p className="mt-2 text-3xl font-semibold leading-none">{value}</p>
+            <p className="mt-3 text-xs text-[#c55339]">{chip}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-[24px_8px_24px_8px] border border-[#efe2d2] p-4">
+        <div className="mb-4 flex items-center justify-between text-xs text-[#6b776f]">
+          <span>Parcours visiteur</span>
+          <span>Objectif contact</span>
+        </div>
+        <div className="flex h-28 items-end gap-2">
+          {[36, 52, 44, 68, 58, 83, 72, 92].map((height, index) => (
             <span
-              key={height}
-              className="w-7 rounded-t-xl bg-gradient-to-t from-cyan-500 to-cyan-200"
+              key={`${height}-${index}`}
+              className={`flex-1 rounded-t-[6px] ${
+                index % 3 === 0
+                  ? "bg-[#18c6a4]"
+                  : index % 3 === 1
+                    ? "bg-[#ff6b4a]"
+                    : "bg-[#17211c]"
+              }`}
               style={{ height: `${height}%` }}
             />
           ))}
         </div>
-      </motion.div>
-      <div className="relative overflow-hidden rounded-[34px] border border-white/12 bg-white/[0.055] p-3 shadow-[0_34px_140px_rgba(0,0,0,0.42)] backdrop-blur">
-        <div className="rounded-[28px] border border-white/10 bg-[#07101f]">
-          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-            <span className="size-3 rounded-full bg-rose-400" />
-            <span className="size-3 rounded-full bg-amber-300" />
-            <span className="size-3 rounded-full bg-emerald-300" />
-            <span className="ml-3 h-7 flex-1 rounded-full bg-white/7" />
-          </div>
-          <div className="grid gap-4 p-4 sm:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-3xl bg-gradient-to-br from-cyan-300 via-blue-500 to-violet-500 p-[1px]">
-              <div className="h-full rounded-3xl bg-slate-950 p-5">
-                <p className="mb-4 text-sm text-cyan-200">Page d&apos;accueil</p>
-                <div className="space-y-3">
-                  <span className="block h-5 w-11/12 rounded-full bg-white/18" />
-                  <span className="block h-5 w-7/12 rounded-full bg-white/18" />
-                  <span className="block h-3 w-10/12 rounded-full bg-white/10" />
-                  <span className="block h-3 w-8/12 rounded-full bg-white/10" />
-                </div>
-                <div className="mt-6 h-12 rounded-2xl bg-cyan-300" />
-                <div className="mt-6 grid grid-cols-3 gap-2">
-                  {[1, 2, 3].map((item) => (
-                    <span key={item} className="h-16 rounded-2xl bg-white/8" />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-300">Conversion</span>
-                  <span className="rounded-full bg-emerald-300/12 px-3 py-1 text-xs text-emerald-200">
-                    +38%
-                  </span>
-                </div>
-                <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
-                  <motion.span
-                    initial={reduceMotion ? false : { width: "22%" }}
-                    animate={reduceMotion ? undefined : { width: "76%" }}
-                    transition={{ duration: 1.2, delay: 0.4 }}
-                    className="block h-full rounded-full bg-cyan-300"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-4">
-                  <Code2
-                    className="mb-4 size-5 text-cyan-300"
-                    aria-hidden="true"
-                  />
-                  <span className="block h-2.5 w-16 rounded-full bg-white/16" />
-                  <span className="mt-3 block h-2.5 w-24 rounded-full bg-white/10" />
-                </div>
-                <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-4">
-                  <PenTool
-                    className="mb-4 size-5 text-violet-300"
-                    aria-hidden="true"
-                  />
-                  <span className="block h-2.5 w-14 rounded-full bg-white/16" />
-                  <span className="mt-3 block h-2.5 w-20 rounded-full bg-white/10" />
-                </div>
-              </div>
-              <div className="rounded-3xl border border-white/10 bg-white/[0.055] p-4">
-                <div className="flex items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-2xl bg-cyan-300 text-slate-950">
-                    <Search className="size-5" aria-hidden="true" />
-                  </span>
-                  <div className="flex-1">
-                    <span className="block h-2.5 w-3/4 rounded-full bg-white/16" />
-                    <span className="mt-2 block h-2.5 w-1/2 rounded-full bg-white/10" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </motion.div>
+    </article>
   );
 }
 
-function ProjectPreview({
+function LogoStrip() {
+  return (
+    <section className="relative mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
+      <div className="-rotate-1 rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-[#fff7ea] px-5 py-5 shadow-[0_18px_60px_rgba(72,48,30,0.08)]">
+        <div className="flex rotate-1 flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-semibold text-[#6b5f51]">
+          {["Brief", "Storyline", "Interface", "Mobile", "SEO", "Launch", "Growth"].map(
+          (item) => (
+            <span key={item} className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-[#ff6b4a]" />
+              {item}
+            </span>
+          ),
+        )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AnalyticsPanel() {
+  return (
+    <div className="relative z-10 flex h-full items-center">
+      <div className="w-full rounded-[28px_8px_28px_8px] border border-white/15 bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_80px_rgba(0,0,0,0.25)]">
+        <div className="mb-5 flex items-center justify-between">
+          <div>
+            <p className="font-semibold">Vue d'ensemble</p>
+            <p className="text-xs text-[#6b776f]">Demandes, pages et sources</p>
+          </div>
+          <span className="rounded-full bg-[#ffe0d2] px-3 py-1 text-xs font-semibold text-[#9a3d2b]">
+            +31%
+          </span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {[
+            ["2.13%", "Taux contact"],
+            ["71", "Leads"],
+            ["8", "Pages clés"],
+          ].map(([value, label]) => (
+            <div key={label} className="rounded-[20px_7px_20px_7px] border border-[#efe2d2] bg-white p-4">
+              <p className="text-2xl font-semibold leading-none">{value}</p>
+              <p className="mt-2 text-xs text-[#6b776f]">{label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 rounded-[24px_8px_24px_8px] border border-[#efe2d2] p-4">
+          <div className="mb-4 flex items-center gap-2 text-xs text-[#6b776f]">
+            <BarChart3 className="size-4" aria-hidden="true" />
+            <span>Demandes mensuelles</span>
+          </div>
+          <div className="flex h-28 items-end gap-2">
+            {[30, 42, 39, 56, 62, 72, 68, 82, 76, 88, 92, 96].map(
+              (height, index) => (
+                <span
+                  key={`${height}-${index}`}
+                  className="flex-1 rounded-t-[10px] bg-[linear-gradient(180deg,#ff6b4a_0%,#18c6a4_100%)]"
+                  style={{ height: `${height}%` }}
+                />
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ServiceCard({ service, index }: { service: IconCard; index: number }) {
+  const Icon = service.icon;
+  const colors = ["bg-[#e0f7ef]", "bg-[#ffe6d7]", "bg-[#fff0bd]", "bg-[#e7edff]"];
+
+  return (
+    <article className={`${colors[index]} group min-h-[310px] rounded-[28px_8px_28px_8px] border border-[#e2d8c9] p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(72,48,30,0.12)]`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b5f51]">
+            {service.tag}
+          </p>
+          <h3 className="mt-3 max-w-[13rem] text-2xl font-semibold leading-tight">
+            {service.title}
+          </h3>
+        </div>
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px_4px_14px_4px] border border-[#17211c]/15 bg-white/65">
+          <ArrowUpRight className="size-4" aria-hidden="true" />
+        </span>
+      </div>
+      <div className="mt-9 rounded-[22px_7px_22px_7px] border border-white/80 bg-white/65 p-4 shadow-[0_18px_45px_rgba(72,48,30,0.08)]">
+        <Icon className="mb-8 size-7" aria-hidden="true" />
+        <p className="text-sm leading-6 text-[#5f665d]">{service.description}</p>
+      </div>
+    </article>
+  );
+}
+
+function MetricRow({
+  value,
+  label,
+  note,
+  active,
+}: {
+  value: string;
+  label: string;
+  note: string;
+  active: boolean;
+}) {
+  return (
+    <article className={`grid gap-4 rounded-[28px_8px_28px_8px] border p-5 sm:grid-cols-[16rem_1fr] sm:items-center ${active ? "border-[#17211c] bg-[#17211c] text-white" : "border-[#e2d8c9] bg-white/55 text-[#b2a99c]"}`}>
+      <div className="flex items-center gap-4">
+        <span className={`flex size-16 shrink-0 items-center justify-center rounded-[22px_6px_22px_6px] ${active ? "bg-[#ffb45f] text-[#17211c]" : "bg-[#fff0dc]"}`}>
+          <ArrowRight className="-rotate-45 size-8" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="text-5xl font-semibold leading-none sm:text-6xl">{value}</p>
+          <p className="mt-1 text-sm">{label}</p>
+        </div>
+      </div>
+      <p className={`max-w-lg text-sm leading-6 ${active ? "text-white/74" : "text-[#a99d8f]"}`}>
+        {note}
+      </p>
+    </article>
+  );
+}
+
+function VisibilityChart() {
+  const rows = [
+    ["Clarté de l'offre", 96],
+    ["Preuves", 84],
+    ["Contact", 91],
+    ["Mobile", 88],
+    ["Vitesse", 79],
+    ["SEO local", 72],
+  ] as const;
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="font-semibold">Audit de conversion</p>
+          <p className="text-xs text-[#6b776f]">Prototype avant mise en ligne</p>
+        </div>
+        <span className="rounded-full bg-[#ffe6d7] px-3 py-1 text-xs font-semibold text-[#a3422e]">
+          Priorisé
+        </span>
+      </div>
+      <div className="space-y-4">
+        {rows.map(([label, value], index) => (
+          <div key={label} className="grid gap-3 sm:grid-cols-[11rem_1fr_3rem]">
+            <p className="text-sm font-medium">{label}</p>
+            <div className="h-3 overflow-hidden rounded-full bg-[#f3eadc]">
+              <span
+                className={`block h-full rounded-full ${index % 2 === 0 ? "bg-[#18c6a4]" : "bg-[#ff6b4a]"}`}
+                style={{ width: `${value}%` }}
+              />
+            </div>
+            <p className="text-sm text-[#6b776f]">{value}%</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ProjectCard({
   project,
   index,
 }: {
@@ -798,37 +764,70 @@ function ProjectPreview({
   index: number;
 }) {
   return (
-    <div
-      className={`relative min-h-[260px] overflow-hidden bg-gradient-to-br ${project.color} p-5`}
+    <article
+      tabIndex={0}
+      onFocus={() => trackConversion("portfolio_view", { project: project.name })}
+      onMouseEnter={() =>
+        trackConversion("portfolio_view", { project: project.name })
+      }
+      className="group rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-white p-3 outline-none transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(72,48,30,0.12)] focus-visible:ring-2 focus-visible:ring-[#ff6b4a]"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.32),transparent_28%),radial-gradient(circle_at_80%_0%,rgba(34,211,238,0.24),transparent_28%)]" />
-      <div className="relative rounded-[24px] border border-white/18 bg-slate-950/80 p-4 shadow-2xl transition duration-300 group-hover:scale-[1.015]">
-        <div className="mb-4 flex items-center gap-2">
-          <span className="size-2.5 rounded-full bg-rose-300" />
-          <span className="size-2.5 rounded-full bg-amber-200" />
-          <span className="size-2.5 rounded-full bg-emerald-300" />
-          <span className="ml-2 h-6 flex-1 rounded-full bg-white/10" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-[0.8fr_1.2fr]">
-          <div className="space-y-3">
-            <span className="block h-4 w-11/12 rounded-full bg-white/22" />
-            <span className="block h-4 w-8/12 rounded-full bg-white/22" />
-            <span className="block h-3 w-10/12 rounded-full bg-white/12" />
-            <span className="block h-10 w-32 rounded-2xl bg-cyan-300" />
+      <div className={`relative min-h-[260px] overflow-hidden rounded-[22px_6px_22px_6px] bg-gradient-to-br ${project.palette} p-5`}>
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-[repeating-linear-gradient(135deg,rgba(23,33,28,0.18)_0_2px,transparent_2px_10px)]" />
+        <div className="relative mx-auto max-w-md rounded-[24px_8px_24px_8px] border border-white/75 bg-white/80 p-4 shadow-[0_22px_60px_rgba(72,48,30,0.14)] backdrop-blur">
+          <div className="mb-4 flex items-center gap-2">
+            <span className="size-2.5 rounded-full bg-[#f16d8a]" />
+            <span className="size-2.5 rounded-full bg-[#facf5a]" />
+            <span className="size-2.5 rounded-full bg-[#18c6a4]" />
+            <span className="ml-2 h-6 flex-1 rounded-full bg-[#eef2ed]" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {[0, 1, 2, 3].map((item) => (
-              <span
-                key={item}
-                className={`h-20 rounded-2xl ${
-                  (item + index) % 2 === 0 ? "bg-white/16" : "bg-cyan-300/22"
-                }`}
-              />
-            ))}
+          <div className="grid gap-4 sm:grid-cols-[0.86fr_1.14fr]">
+            <div>
+              <span className="block h-5 w-10/12 rounded-full bg-[#17211c]" />
+              <span className="mt-2 block h-5 w-7/12 rounded-full bg-[#17211c]" />
+              <span className="mt-5 block h-3 w-full rounded-full bg-[#cfd8d0]" />
+              <span className="mt-2 block h-3 w-8/12 rounded-full bg-[#dfe6df]" />
+              <span className="mt-6 block h-9 w-28 rounded-full bg-[#ff6b4a]" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[0, 1, 2, 3].map((item) => (
+                <span key={item} className={`h-20 rounded-[16px_5px_16px_5px] ${(item + index) % 2 === 0 ? "bg-[#18c6a4]/70" : "bg-white"}`} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-[#6b776f]">{project.industry}</p>
+          <h3 className="mt-1 text-2xl font-semibold">{project.name}</h3>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-[#53605a]">
+            {project.description}
+          </p>
+        </div>
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px_5px_16px_5px] border border-[#e2d8c9] transition group-hover:bg-[#17211c] group-hover:text-white">
+          <ExternalLink className="size-4" aria-hidden="true" />
+        </span>
+      </div>
+    </article>
+  );
+}
+
+function OutcomeItem({ outcome }: { outcome: IconCard }) {
+  const Icon = outcome.icon;
+
+  return (
+    <article className="flex gap-4 rounded-[24px_8px_24px_8px] border border-[#e2d8c9] bg-white p-4">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px_5px_16px_5px] bg-[#ffe6d7]">
+        <Icon className="size-5" aria-hidden="true" />
+      </span>
+      <div>
+        <h3 className="font-semibold">{outcome.title}</h3>
+        <p className="mt-1 text-sm leading-6 text-[#53605a]">
+          {outcome.description}
+        </p>
+      </div>
+    </article>
   );
 }
 
@@ -840,9 +839,7 @@ function LeadForm() {
     description: "",
   });
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-    "idle",
-  );
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [hasStarted, setHasStarted] = useState(false);
 
   function startForm() {
@@ -881,53 +878,51 @@ function LeadForm() {
     <form
       onSubmit={onSubmit}
       onFocus={startForm}
-      className="rounded-[28px] border border-white/12 bg-white/[0.075] p-5 shadow-[0_22px_90px_rgba(0,0,0,0.25)] backdrop-blur sm:p-6"
+      className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white p-5 shadow-[0_22px_80px_rgba(72,48,30,0.12)] sm:p-7"
       noValidate
     >
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b776f]">
+            Formulaire
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold">Décrire mon projet</h3>
+        </div>
+        <span className="hidden size-12 items-center justify-center rounded-[18px_6px_18px_6px] bg-[#18c6a4] sm:flex">
+          <Send className="size-5" aria-hidden="true" />
+        </span>
+      </div>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field error={errors.name} className="sm:col-span-1">
-          <Label htmlFor="name" className="text-slate-100">
-            Nom et prénom
-          </Label>
+        <Field error={errors.name}>
+          <Label htmlFor="name">Nom et prénom</Label>
           <Input
             id="name"
             value={form.name}
             onChange={(event) => updateField("name", event.target.value)}
             aria-invalid={Boolean(errors.name)}
-            className="mt-2 h-12 rounded-2xl border-white/12 bg-slate-950/45 text-white placeholder:text-slate-500"
+            className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
             placeholder="Votre nom"
           />
         </Field>
-        <Field error={errors.phone} className="sm:col-span-1">
-          <Label htmlFor="phone" className="text-slate-100">
-            Téléphone / WhatsApp
-          </Label>
+        <Field error={errors.phone}>
+          <Label htmlFor="phone">Téléphone / WhatsApp</Label>
           <Input
             id="phone"
             value={form.phone}
             onChange={(event) => updateField("phone", event.target.value)}
             aria-invalid={Boolean(errors.phone)}
             inputMode="tel"
-            className="mt-2 h-12 rounded-2xl border-white/12 bg-slate-950/45 text-white placeholder:text-slate-500"
+            className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
             placeholder="+212 6 00 00 00 00"
           />
         </Field>
         <Field error={errors.siteType} className="sm:col-span-2">
-          <Label htmlFor="site-type" className="text-slate-100">
-            Type de site
-          </Label>
-          <Select
-            value={form.siteType}
-            onValueChange={(value) => updateField("siteType", value)}
-          >
-            <SelectTrigger
-              id="site-type"
-              aria-invalid={Boolean(errors.siteType)}
-              className="mt-2 h-12 w-full rounded-2xl border-white/12 bg-slate-950/45 text-white"
-            >
+          <Label htmlFor="site-type">Type de site</Label>
+          <Select value={form.siteType} onValueChange={(value) => updateField("siteType", value)}>
+            <SelectTrigger id="site-type" aria-invalid={Boolean(errors.siteType)} className="mt-2 h-12 w-full rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]">
               <SelectValue placeholder="Choisissez une option" />
             </SelectTrigger>
-            <SelectContent className="border-white/10 bg-slate-950 text-white">
+            <SelectContent className="border-[#e2d8c9] bg-white text-[#17211c]">
               {siteTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -937,45 +932,35 @@ function LeadForm() {
           </Select>
         </Field>
         <Field error={errors.description} className="sm:col-span-2">
-          <Label htmlFor="description" className="text-slate-100">
-            Parlez-nous rapidement de votre projet
-          </Label>
+          <Label htmlFor="description">Parlez-nous rapidement de votre projet</Label>
           <Textarea
             id="description"
             value={form.description}
             onChange={(event) => updateField("description", event.target.value)}
             aria-invalid={Boolean(errors.description)}
-            className="mt-2 min-h-32 rounded-2xl border-white/12 bg-slate-950/45 text-white placeholder:text-slate-500"
+            className="mt-2 min-h-32 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
             placeholder="Exemple : je veux présenter mon activité et recevoir plus de demandes de contact."
           />
         </Field>
       </div>
       {status === "success" ? (
-        <div className="mt-5 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4 text-sm text-emerald-100">
-          Votre demande est bien reçue. Nous reviendrons vers vous rapidement
-          avec une proposition adaptée.
+        <div className="mt-5 rounded-[8px] border border-[#98ddc9] bg-[#e1fbf2] p-4 text-sm text-[#126f5c]">
+          Votre demande est bien reçue. Nous reviendrons vers vous rapidement.
         </div>
       ) : null}
       {status === "error" && Object.keys(errors).length === 0 ? (
-        <div className="mt-5 rounded-2xl border border-rose-300/20 bg-rose-300/10 p-4 text-sm text-rose-100">
-          Une erreur est survenue. Vous pouvez réessayer ou nous écrire
-          directement sur WhatsApp.
+        <div className="mt-5 rounded-[8px] border border-[#f0bcc9] bg-[#fff0f4] p-4 text-sm text-[#a83c58]">
+          Une erreur est survenue. Vous pouvez réessayer ou écrire sur WhatsApp.
         </div>
       ) : null}
       <Button
         type="submit"
         disabled={status === "loading"}
-        className="mt-6 h-14 w-full rounded-full bg-cyan-300 text-base font-semibold text-slate-950 hover:bg-cyan-200"
+        className="mt-6 h-14 w-full rounded-full bg-[#17211c] text-base font-semibold text-white hover:bg-[#2b372f]"
       >
-        {status === "loading"
-          ? "Envoi en cours..."
-          : "Recevoir ma proposition gratuite"}
+        {status === "loading" ? "Envoi en cours..." : "Recevoir ma proposition gratuite"}
         <ArrowRight className="size-5" aria-hidden="true" />
       </Button>
-      <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-        Vos informations sont utilisées uniquement pour vous recontacter au
-        sujet de votre projet.
-      </p>
     </form>
   );
 }
@@ -985,29 +970,23 @@ function Field({
   error,
   className,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   error?: string;
   className?: string;
 }) {
   return (
     <div className={className}>
       {children}
-      {error ? <p className="mt-2 text-sm text-rose-200">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm text-[#b72f51]">{error}</p> : null}
     </div>
   );
 }
 
 function validateLead(form: LeadPayload) {
   const errors: FieldErrors = {};
-  if (form.name.trim().length < 2) {
-    errors.name = "Indiquez votre nom complet.";
-  }
-  if (form.phone.trim().length < 8) {
-    errors.phone = "Ajoutez un numéro valide pour vous recontacter.";
-  }
-  if (!form.siteType) {
-    errors.siteType = "Choisissez le type de site souhaité.";
-  }
+  if (form.name.trim().length < 2) errors.name = "Indiquez votre nom complet.";
+  if (form.phone.trim().length < 8) errors.phone = "Ajoutez un numéro valide.";
+  if (!form.siteType) errors.siteType = "Choisissez le type de site souhaité.";
   if (form.description.trim().length < 12) {
     errors.description = "Ajoutez quelques détails sur votre projet.";
   }
@@ -1016,46 +995,60 @@ function validateLead(form: LeadPayload) {
 
 function Footer() {
   return (
-    <footer className="relative border-t border-white/10 px-5 py-10 sm:px-8 lg:px-10">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-2xl bg-cyan-300 text-sm font-black text-slate-950">
-            EG
-          </span>
-          <div>
-            <p className="font-semibold">{SITE_CONFIG.brand}</p>
-            <p className="text-sm text-slate-400">
-              Création de sites web au Maroc
-            </p>
-          </div>
+    <footer className="relative overflow-hidden border-t border-[#e2d8c9] bg-[#fff1d8] px-5 pb-8 pt-16 sm:px-8 lg:px-10">
+      <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-[0.9fr_1.1fr]">
+        <div>
+          <h2 className="max-w-md text-4xl font-semibold leading-[0.96]">
+            Un site clair pour une entreprise plus visible.
+          </h2>
+          <Button
+            asChild
+            className="mt-7 h-11 rounded-full bg-[#ff6b4a] px-5 font-semibold text-white hover:bg-[#ec5738]"
+            onClick={() =>
+              trackConversion("proposal_cta_click", { placement: "footer" })
+            }
+          >
+            <a href="#contact">Démarrer le brief</a>
+          </Button>
         </div>
-        <div className="flex flex-wrap gap-5 text-sm text-slate-300">
-          {navLinks.map((link) => (
-            <a key={link.href} href={link.href} className="hover:text-white">
-              {link.label}
-            </a>
-          ))}
-          <a href="#contact" className="hover:text-white">
-            Contact
-          </a>
-          <span className="text-slate-400">
-            Politique de confidentialité
-          </span>
+        <div className="grid gap-8 sm:grid-cols-3">
+          <FooterColumn title={SITE_CONFIG.brand} links={["Services", "Réalisations", "Méthode", "Contact"]} />
+          <FooterColumn title="Types de site" links={["Site vitrine", "E-commerce", "Landing page", "Refonte"]} />
+          <FooterColumn title="Support" links={["WhatsApp", "Proposition", "Confidentialité"]} />
         </div>
-        <p className="text-sm text-slate-500">
-          © {new Date().getFullYear()} {SITE_CONFIG.brand}. Tous droits réservés.
-        </p>
       </div>
+      <div className="mx-auto mt-16 w-full max-w-7xl">
+        <div className="flex flex-col gap-5 border-t border-[#e2d8c9] pt-6 text-xs text-[#6b776f] sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} {SITE_CONFIG.brand}. Tous droits réservés.</p>
+          <p>Création de sites web au Maroc.</p>
+        </div>
+      </div>
+      <p aria-hidden="true" className="pointer-events-none mt-10 select-none text-center text-[clamp(4rem,16vw,13rem)] font-black leading-[0.72] tracking-normal text-[#17211c]">
+        GROWTH STUDIO
+      </p>
     </footer>
+  );
+}
+
+function FooterColumn({ title, links }: { title: string; links: string[] }) {
+  return (
+    <div>
+      <h3 className="mb-4 text-sm font-semibold">{title}</h3>
+      <div className="grid gap-2 text-sm text-[#53605a]">
+        {links.map((link) => (
+          <span key={link}>{link}</span>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function MobileStickyCta() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-slate-950/92 p-3 backdrop-blur md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#e2d8c9] bg-white/92 p-3 backdrop-blur md:hidden">
       <Button
         asChild
-        className="h-12 w-full rounded-full bg-cyan-300 font-semibold text-slate-950 hover:bg-cyan-200"
+        className="h-12 w-full rounded-full bg-[#17211c] font-semibold text-white hover:bg-[#2b372f]"
         onClick={() =>
           trackConversion("proposal_cta_click", { placement: "mobile_sticky" })
         }
@@ -1069,16 +1062,27 @@ function MobileStickyCta() {
   );
 }
 
+function SectionEyebrow({
+  children,
+  dark = false,
+}: {
+  children: ReactNode;
+  dark?: boolean;
+}) {
+  return (
+    <p className={`mb-4 text-xs font-semibold uppercase tracking-[0.16em] ${dark ? "text-[#ffb45f]" : "text-[#746858]"}`}>
+      {children}
+    </p>
+  );
+}
+
 function SiteBackground() {
   return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed inset-0 overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-[size:72px_72px] opacity-[0.18]" />
-      <div className="absolute left-1/2 top-0 h-[540px] w-[820px] -translate-x-1/2 rounded-full bg-cyan-500/16 blur-[130px]" />
-      <div className="absolute right-[-180px] top-[28%] h-[500px] w-[500px] rounded-full bg-violet-500/12 blur-[130px]" />
-      <div className="absolute bottom-[-220px] left-[-120px] h-[520px] w-[520px] rounded-full bg-blue-500/14 blur-[140px]" />
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="absolute inset-x-0 top-0 h-[720px] bg-[linear-gradient(145deg,#fff1d8_0%,#e2f7ee_46%,#fbf7ef_100%)]" />
+      <div className="absolute inset-x-0 top-[120px] h-[460px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,107,74,0.18),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(24,198,164,0.18),transparent_24%)]" />
+      <div className="absolute inset-x-0 top-[110px] h-[500px] bg-[linear-gradient(135deg,rgba(23,33,28,0.06)_0_1px,transparent_1px_18px)] opacity-50" />
+      <div className="absolute inset-x-0 bottom-0 h-[360px] bg-[linear-gradient(180deg,transparent_0%,rgba(255,241,216,0.75)_100%)]" />
     </div>
   );
 }
