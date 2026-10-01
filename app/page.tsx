@@ -5,11 +5,13 @@ import {
   ArrowRight,
   ArrowUpRight,
   BarChart3,
+  CheckCircle2,
   ChevronRight,
   ExternalLink,
   Gauge,
   LayoutTemplate,
   type LucideIcon,
+  Mail,
   MessageCircle,
   MousePointerClick,
   Search,
@@ -35,7 +37,7 @@ import { submitLead, type LeadPayload } from "@/lib/leads";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { trackConversion } from "@/lib/tracking";
 
-type FieldErrors = Partial<Record<keyof LeadPayload, string>>;
+type FieldErrors = Partial<Record<keyof LeadPayload | "email" | "contactMethod", string>>;
 
 type IconCard = {
   title: string;
@@ -176,7 +178,7 @@ const siteTypes = [
   "Je ne sais pas encore",
 ];
 
-import { motion, useScroll, useTransform, useReducedMotion, Variants } from "framer-motion";
+import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion, Variants } from "framer-motion";
 import { useRef } from "react";
 
 function getAnimationVariants(reduceMotion: boolean | null) {
@@ -819,14 +821,26 @@ function OutcomeItem({ outcome }: { outcome: IconCard }) {
   );
 }
 
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  siteType: string;
+  description: string;
+  contactMethod: "whatsapp" | "email" | "";
+};
+
 function LeadForm() {
-  const [form, setForm] = useState<LeadPayload>({
+  const [step, setStep] = useState<1 | 2>(1);
+  const [form, setForm] = useState<FormData>({
     name: "",
+    email: "",
     phone: "",
     siteType: "",
     description: "",
+    contactMethod: "",
   });
-  const [errors, setErrors] = useState<FieldErrors>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [hasStarted, setHasStarted] = useState(false);
 
@@ -837,121 +851,353 @@ function LeadForm() {
     }
   }
 
-  function updateField<K extends keyof LeadPayload>(key: K, value: LeadPayload[K]) {
-    setForm((current) => ({ ...current, [key]: value }));
-    setErrors((current) => ({ ...current, [key]: undefined }));
+  function updateField<K extends keyof FormData>(key: K, value: FormData[K]) {
+    setForm((c) => ({ ...c, [key]: value }));
+    setErrors((c) => {
+      const next = { ...c };
+      delete next[key as string];
+      return next;
+    });
   }
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const nextErrors = validateLead(form);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
-      setStatus("error");
+  function goToStep2(e: FormEvent) {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (form.name.trim().length < 2) errs.name = "Indiquez votre nom complet.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Adresse email invalide.";
+    if (form.phone.trim().length < 8) errs.phone = "Ajoutez un numéro valide.";
+    if (!form.siteType) errs.siteType = "Choisissez le type de site souhaité.";
+    if (form.description.trim().length < 12) errs.description = "Ajoutez quelques détails sur votre projet.";
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    setStep(2);
+  }
+
+  async function onSubmit() {
+    if (!form.contactMethod) {
+      setErrors({ contactMethod: "Choisissez comment vous souhaitez recevoir notre réponse." });
       return;
     }
-
     setStatus("loading");
     try {
-      await submitLead(form);
+      await submitLead({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        siteType: form.siteType,
+        description: form.description,
+        contactMethod: form.contactMethod as "whatsapp" | "email",
+      });
       trackConversion("lead_form_submit", { site_type: form.siteType });
       setStatus("success");
-      setForm({ name: "", phone: "", siteType: "", description: "" });
     } catch {
       setStatus("error");
     }
   }
 
-  return (
-    <form
-      onSubmit={onSubmit}
-      onFocus={startForm}
-      className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white p-5 text-[#17211c] shadow-[0_22px_80px_rgba(72,48,30,0.12)] sm:p-7"
-      noValidate
-    >
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b776f]">
-            Formulaire
-          </p>
-          <h3 className="mt-2 text-2xl font-semibold">Décrire mon projet</h3>
-        </div>
-        <span className="hidden size-12 items-center justify-center rounded-[18px_6px_18px_6px] bg-[#18c6a4] sm:flex">
-          <Send className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field error={errors.name}>
-          <Label htmlFor="name">Nom et prénom</Label>
-          <Input
-            id="name"
-            value={form.name}
-            onChange={(event) => updateField("name", event.target.value)}
-            aria-invalid={Boolean(errors.name)}
-            className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-            placeholder="Votre nom"
-          />
-        </Field>
-        <Field error={errors.phone}>
-          <Label htmlFor="phone">Téléphone / WhatsApp</Label>
-          <Input
-            id="phone"
-            value={form.phone}
-            onChange={(event) => updateField("phone", event.target.value)}
-            aria-invalid={Boolean(errors.phone)}
-            inputMode="tel"
-            className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-            placeholder="+212 6 00 00 00 00"
-          />
-        </Field>
-        <Field error={errors.siteType} className="sm:col-span-2">
-          <Label htmlFor="site-type">Type de site</Label>
-          <Select value={form.siteType} onValueChange={(value) => updateField("siteType", value)}>
-            <SelectTrigger id="site-type" aria-invalid={Boolean(errors.siteType)} className="mt-2 h-12 w-full rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]">
-              <SelectValue placeholder="Choisissez une option" />
-            </SelectTrigger>
-            <SelectContent className="border-[#e2d8c9] bg-white text-[#17211c]">
-              {siteTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field error={errors.description} className="sm:col-span-2">
-          <Label htmlFor="description">Parlez-nous rapidement de votre projet</Label>
-          <Textarea
-            id="description"
-            value={form.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            aria-invalid={Boolean(errors.description)}
-            className="mt-2 min-h-32 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-            placeholder="Exemple : je veux présenter mon activité et recevoir plus de demandes de contact."
-          />
-        </Field>
-      </div>
-      {status === "success" ? (
-        <div className="mt-5 rounded-[8px] border border-[#98ddc9] bg-[#e1fbf2] p-4 text-sm text-[#126f5c]">
-          Votre demande est bien reçue. Nous reviendrons vers vous rapidement.
-        </div>
-      ) : null}
-      {status === "error" && Object.keys(errors).length === 0 ? (
-        <div className="mt-5 rounded-[8px] border border-[#f0bcc9] bg-[#fff0f4] p-4 text-sm text-[#a83c58]">
-          Une erreur est survenue. Vous pouvez réessayer.
-        </div>
-      ) : null}
-      <Button
-        type="submit"
-        disabled={status === "loading"}
-        className="mt-6 h-14 w-full rounded-full bg-[#17211c] text-base font-semibold text-white hover:bg-[#2b372f]"
+  // ── Success screen ──────────────────────────────────────────────────────────
+  if (status === "success") {
+    const byWhatsApp = form.contactMethod === "whatsapp";
+    const whatsappText = encodeURIComponent(
+      `Bonjour, je suis ${form.name}. Je viens de soumettre ma demande sur votre site pour un projet : ${form.siteType}.`
+    );
+    const whatsappUrl = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${whatsappText}`;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white p-5 text-[#17211c] shadow-[0_22px_80px_rgba(72,48,30,0.12)] sm:p-7"
       >
-        {status === "loading" ? "Envoi en cours..." : "Recevoir ma proposition gratuite"}
-        <ArrowRight className="size-5" aria-hidden="true" />
-      </Button>
-    </form>
+        {/* Animated check */}
+        <div className="flex flex-col items-center py-6 text-center">
+          <motion.div
+            initial={{ scale: 0, rotate: -30 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.1, duration: 0.7, type: "spring", stiffness: 200 }}
+            className="mb-5 flex size-20 items-center justify-center rounded-full bg-[#18c6a4]/15"
+          >
+            <CheckCircle2 className="size-10 text-[#18c6a4]" />
+          </motion.div>
+
+          <motion.h3
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="text-2xl font-semibold"
+          >
+            Demande bien reçue !
+          </motion.h3>
+
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="mt-3 max-w-sm text-sm leading-6 text-[#53605a]"
+          >
+            {byWhatsApp
+              ? "Nous vous contacterons sur WhatsApp avec votre proposition personnalisée."
+              : `Nous vous enverrons votre proposition à l'adresse ${form.email}.`}
+          </motion.p>
+
+
+
+          {!byWhatsApp && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-5 flex items-center gap-2 rounded-[12px] border border-[#e2d8c9] bg-[#fffaf2] px-4 py-3 text-sm"
+            >
+              <Mail className="size-4 shrink-0 text-[#ff6b4a]" />
+              <span className="text-[#53605a]">
+                Vérifiez votre boîte mail — et vos spams.
+              </span>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // ── Form ────────────────────────────────────────────────────────────────────
+  return (
+    <div
+      onFocus={startForm}
+      className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white text-[#17211c] shadow-[0_22px_80px_rgba(72,48,30,0.12)] overflow-hidden"
+    >
+      {/* Progress bar */}
+      <div className="h-1 bg-[#f3eadc]">
+        <motion.div
+          className="h-full bg-[#ff6b4a]"
+          animate={{ width: step === 1 ? "50%" : "100%" }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+
+      <div className="p-5 sm:p-7">
+        {/* Header */}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b776f]">
+              Étape {step} / 2
+            </p>
+            <h3 className="mt-2 text-2xl font-semibold">
+              {step === 1 ? "Décrire mon projet" : "Comment vous répondre ?"}
+            </h3>
+          </div>
+          <span className="hidden size-12 items-center justify-center rounded-[18px_6px_18px_6px] bg-[#18c6a4] sm:flex">
+            {step === 1
+              ? <Send className="size-5 text-white" aria-hidden="true" />
+              : <MessageCircle className="size-5 text-white" aria-hidden="true" />}
+          </span>
+        </div>
+
+        {/* Step 1 */}
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <motion.form
+              key="step1"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              onSubmit={goToStep2}
+              noValidate
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field error={errors.name}>
+                  <Label htmlFor="name">Nom et prénom</Label>
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={(e) => updateField("name", e.target.value)}
+                    aria-invalid={Boolean(errors.name)}
+                    className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
+                    placeholder="Votre nom"
+                  />
+                </Field>
+                <Field error={errors.phone}>
+                  <Label htmlFor="phone">Téléphone / WhatsApp</Label>
+                  <Input
+                    id="phone"
+                    value={form.phone}
+                    onChange={(e) => updateField("phone", e.target.value)}
+                    aria-invalid={Boolean(errors.phone)}
+                    inputMode="tel"
+                    className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
+                    placeholder="+212 6 00 00 00 00"
+                  />
+                </Field>
+                <Field error={errors.email} className="sm:col-span-2">
+                  <Label htmlFor="email">Adresse email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => updateField("email", e.target.value)}
+                    aria-invalid={Boolean(errors.email)}
+                    className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
+                    placeholder="vous@exemple.com"
+                  />
+                </Field>
+                <Field error={errors.siteType} className="sm:col-span-2">
+                  <Label htmlFor="site-type">Type de site</Label>
+                  <Select value={form.siteType} onValueChange={(v) => updateField("siteType", v)}>
+                    <SelectTrigger id="site-type" aria-invalid={Boolean(errors.siteType)} className="mt-2 h-12 w-full rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]">
+                      <SelectValue placeholder="Choisissez une option" />
+                    </SelectTrigger>
+                    <SelectContent className="border-[#e2d8c9] bg-white text-[#17211c]">
+                      {siteTypes.map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field error={errors.description} className="sm:col-span-2">
+                  <Label htmlFor="description">Parlez-nous rapidement de votre projet</Label>
+                  <Textarea
+                    id="description"
+                    value={form.description}
+                    onChange={(e) => updateField("description", e.target.value)}
+                    aria-invalid={Boolean(errors.description)}
+                    className="mt-2 min-h-32 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
+                    placeholder="Exemple : je veux présenter mon activité et recevoir plus de demandes de contact."
+                  />
+                </Field>
+              </div>
+              <Button
+                type="submit"
+                className="mt-6 h-14 w-full rounded-full bg-[#17211c] text-base font-semibold text-white hover:bg-[#2b372f]"
+              >
+                Continuer
+                <ArrowRight className="size-5" aria-hidden="true" />
+              </Button>
+            </motion.form>
+          )}
+
+          {/* Step 2 */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <p className="mb-4 text-sm text-[#53605a]">
+                Comment souhaitez-vous recevoir votre proposition ?
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {/* WhatsApp option */}
+                <button
+                  type="button"
+                  onClick={() => updateField("contactMethod", "whatsapp")}
+                  className={`group flex flex-col gap-3 rounded-[20px_7px_20px_7px] border-2 p-5 text-left transition-all duration-300 ${
+                    form.contactMethod === "whatsapp"
+                      ? "border-[#25D366] bg-[#e8faf0]"
+                      : "border-[#e2d8c9] bg-[#fffaf2] hover:border-[#25D366]/50"
+                  }`}
+                >
+                  <span className={`flex size-11 items-center justify-center rounded-[14px_4px_14px_4px] transition-colors ${form.contactMethod === "whatsapp" ? "bg-[#25D366]" : "bg-[#e2faf0]"}`}>
+                    <MessageCircle className={`size-5 ${form.contactMethod === "whatsapp" ? "text-white" : "text-[#25D366]"}`} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">WhatsApp</p>
+                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">On vous envoie un message directement.</p>
+                  </div>
+                  {form.contactMethod === "whatsapp" && (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-3 right-3">
+                      <CheckCircle2 className="size-5 text-[#25D366]" />
+                    </motion.div>
+                  )}
+                </button>
+
+                {/* Email option */}
+                <button
+                  type="button"
+                  onClick={() => updateField("contactMethod", "email")}
+                  className={`group flex flex-col gap-3 rounded-[20px_7px_20px_7px] border-2 p-5 text-left transition-all duration-300 ${
+                    form.contactMethod === "email"
+                      ? "border-[#ff6b4a] bg-[#fff5f2]"
+                      : "border-[#e2d8c9] bg-[#fffaf2] hover:border-[#ff6b4a]/50"
+                  }`}
+                >
+                  <span className={`flex size-11 items-center justify-center rounded-[14px_4px_14px_4px] transition-colors ${form.contactMethod === "email" ? "bg-[#ff6b4a]" : "bg-[#ffe6d7]"}`}>
+                    <Mail className={`size-5 ${form.contactMethod === "email" ? "text-white" : "text-[#ff6b4a]"}`} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="font-semibold">Email</p>
+                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">Nous vous envoyons la proposition par email.</p>
+                  </div>
+                </button>
+              </div>
+
+              {errors.contactMethod && (
+                <p className="mt-3 text-sm text-[#b72f51]">{errors.contactMethod}</p>
+              )}
+              {status === "error" && (
+                <div className="mt-4 rounded-[8px] border border-[#f0bcc9] bg-[#fff0f4] p-4 text-sm text-[#a83c58]">
+                  Une erreur est survenue. Veuillez réessayer.
+                </div>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="h-14 rounded-full border border-[#e2d8c9] bg-white px-5 text-sm font-semibold text-[#17211c] transition hover:bg-[#f3eadc]"
+                >
+                  ← Retour
+                </button>
+                <motion.button
+                  type="button"
+                  onClick={onSubmit}
+                  disabled={status === "loading"}
+                  className="relative flex h-14 flex-1 items-center justify-center overflow-hidden rounded-full bg-[#17211c] text-base font-semibold text-white disabled:opacity-70"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <AnimatePresence mode="wait">
+                    {status === "loading" ? (
+                      <motion.span
+                        key="loading"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2"
+                      >
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                          className="block size-5 rounded-full border-2 border-white/30 border-t-white"
+                        />
+                        Envoi en cours...
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center gap-2"
+                      >
+                        Recevoir ma proposition gratuite
+                        <ArrowRight className="size-5" aria-hidden="true" />
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
   );
 }
+
 
 function Field({
   children,
@@ -970,16 +1216,7 @@ function Field({
   );
 }
 
-function validateLead(form: LeadPayload) {
-  const errors: FieldErrors = {};
-  if (form.name.trim().length < 2) errors.name = "Indiquez votre nom complet.";
-  if (form.phone.trim().length < 8) errors.phone = "Ajoutez un numéro valide.";
-  if (!form.siteType) errors.siteType = "Choisissez le type de site souhaité.";
-  if (form.description.trim().length < 12) {
-    errors.description = "Ajoutez quelques détails sur votre projet.";
-  }
-  return errors;
-}
+
 
 function Footer() {
   return (
