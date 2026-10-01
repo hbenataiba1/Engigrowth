@@ -280,7 +280,7 @@ export default function Home() {
               className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e2d8c9] bg-white/76 px-3 py-2 text-sm font-medium shadow-[0_14px_45px_rgba(72,48,30,0.08)] backdrop-blur"
             >
               <Sparkles className="size-4 text-[#ff6b4a]" aria-hidden="true" />
-              Studio web pour entreprises ambitieuses au Maroc
+              Studio web pour entreprises ambitieuses
             </motion.div>
             <TextReveal className="max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
               Des sites qui donnent à votre entreprise une vraie présence.
@@ -327,20 +327,12 @@ export default function Home() {
         className="relative scroll-mt-24 bg-[#fffaf2] py-20"
       >
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
-        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.div variants={fadeUpVariant} className="max-w-3xl">
             <SectionEyebrow>Solutions</SectionEyebrow>
             <TextReveal as="h2" className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
               Des pages qui rendent votre offre évidente.
             </TextReveal>
-          </motion.div>
-          <motion.div variants={fadeUpVariant} className="hidden gap-2 md:flex" aria-hidden="true">
-            <span className="flex size-10 items-center justify-center rounded-full border border-[#e2d8c9]">
-              <ChevronRight className="size-4 rotate-180" />
-            </span>
-            <span className="flex size-10 items-center justify-center rounded-full border border-[#e2d8c9]">
-              <ChevronRight className="size-4" />
-            </span>
           </motion.div>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} className="mt-9 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -595,7 +587,7 @@ function Header() {
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="bg-[#17211c] px-5 py-2 text-center text-xs font-semibold text-[#fff7ea]">
-        Sites web clairs, rapides et distinctifs pour entreprises au Maroc
+        Sites web clairs, rapides et distinctifs pour entreprises
       </div>
       <nav className="border-b border-[#e2d8c9]/80 bg-[#fbf7ef]/86 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
@@ -1237,31 +1229,65 @@ function Footer() {
           </Button>
         </div>
         <div className="grid gap-8 sm:grid-cols-3">
-          <FooterColumn title={SITE_CONFIG.brand} links={["Services", "Réalisations", "Méthode", "Contact"]} />
-          <FooterColumn title="Types de site" links={["Site vitrine", "E-commerce", "Landing page", "Refonte"]} />
-          <FooterColumn title="Support" links={["WhatsApp", "Proposition", "Confidentialité"]} />
+          <FooterColumn
+            title={SITE_CONFIG.brand}
+            links={[
+              { label: "Services", href: "#services" },
+              { label: "Réalisations", href: "#realisations" },
+              { label: "Méthode", href: "#processus" },
+              { label: "Contact", href: "#contact" },
+            ]}
+          />
+          <FooterColumn
+            title="Types de site"
+            links={[
+              { label: "Site vitrine", href: "#services" },
+              { label: "E-commerce", href: "#services" },
+              { label: "Landing page", href: "#services" },
+              { label: "Refonte", href: "#services" },
+            ]}
+          />
+          <FooterColumn
+            title="Support"
+            links={[
+              { label: "Proposition", href: "#contact" },
+              { label: "Confidentialité", href: "#contact" },
+            ]}
+          />
         </div>
       </div>
       <div className="mx-auto mt-16 w-full max-w-7xl">
         <div className="flex flex-col gap-5 border-t border-[#e2d8c9] pt-6 text-xs text-[#6b776f] sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {SITE_CONFIG.brand}. Tous droits réservés.</p>
-          <p>Création de sites web au Maroc.</p>
+          <p>Agence growth marketing</p>
         </div>
       </div>
       <p aria-hidden="true" className="pointer-events-none mt-10 select-none text-center text-[clamp(4rem,16vw,13rem)] font-black leading-[0.72] tracking-normal text-[#17211c]">
-        GROWTH STUDIO
+        GROWTH MARKETING
       </p>
     </footer>
   );
 }
 
-function FooterColumn({ title, links }: { title: string; links: string[] }) {
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
     <div>
       <h3 className="mb-4 text-sm font-semibold">{title}</h3>
       <div className="grid gap-2 text-sm text-[#53605a]">
         {links.map((link) => (
-          <span key={link}>{link}</span>
+          <a
+            key={link.label}
+            href={link.href}
+            className="transition hover:text-[#17211c]"
+          >
+            {link.label}
+          </a>
         ))}
       </div>
     </div>

@@ -3,19 +3,19 @@ import "./globals.css";
 import { LenisProvider } from "@/components/lenis-provider";
 
 export const metadata: Metadata = {
-  title: "Création site web Maroc | EngiGrowth",
+  title: "Création site web professionnel | EngiGrowth",
   description:
-    "Création de sites internet professionnels au Maroc : site vitrine, e-commerce, landing page et refonte pour transformer vos visiteurs en clients.",
+    "Création de sites internet professionnels : site vitrine, e-commerce, landing page et refonte pour transformer vos visiteurs en clients.",
   keywords: [
-    "création site internet Maroc",
-    "création site web Maroc",
-    "agence web Maroc",
+    "création site internet",
+    "création site web",
+    "agence web",
     "création site vitrine",
     "création site e-commerce",
     "refonte site internet",
   ],
   openGraph: {
-    title: "Création site web Maroc | EngiGrowth",
+    title: "Création site web professionnel | EngiGrowth",
     description:
       "Un site web professionnel, rapide et pensé pour convertir vos visiteurs en clients.",
     type: "website",
