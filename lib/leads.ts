@@ -1,28 +1,10 @@
-export type LeadPayload = {
-  name: string;
-  phone: string;
-  siteType: string;
-  description: string;
-};
-
-const LEAD_ENDPOINT = process.env.NEXT_PUBLIC_LEAD_ENDPOINT;
+export type { LeadPayload } from "./leads.types";
+import { submitLeadAction } from "./actions";
+import { type LeadPayload } from "./leads.types";
 
 export async function submitLead(payload: LeadPayload) {
-  if (LEAD_ENDPOINT) {
-    const response = await fetch(LEAD_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error("Lead submission failed");
-    }
-
-    return;
+  const result = await submitLeadAction(payload);
+  if (!result.success) {
+    throw new Error(result.error || "Lead submission failed");
   }
-
-  await new Promise((resolve) => setTimeout(resolve, 700));
 }

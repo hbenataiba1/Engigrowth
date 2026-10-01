@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -143,21 +143,21 @@ const projects = [
 const processSteps = [
   {
     number: "01",
-    title: "Clarifier l'objectif",
+    title: "Parlez-nous de votre projet",
     description:
-      "Nous identifions votre activité, vos clients et ce que votre site doit provoquer.",
+      "Expliquez-nous votre activité, vos objectifs et vos besoins.",
   },
   {
     number: "02",
-    title: "Construire le parcours",
+    title: "Recevez votre proposition",
     description:
-      "Nous organisons le message, les sections et les appels à l'action autour d'un fil simple.",
+      "Nous définissons la solution, le périmètre et une proposition adaptée.",
   },
   {
     number: "03",
-    title: "Mettre en ligne",
+    title: "Nous créons votre site",
     description:
-      "Nous finalisons le design, les contenus, le mobile et les bases techniques avant publication.",
+      "Design, développement, optimisation et mise en ligne.",
   },
 ];
 
@@ -176,220 +176,273 @@ const siteTypes = [
   "Je ne sais pas encore",
 ];
 
-export default function Home() {
+import { motion, useScroll, useTransform, useReducedMotion, Variants } from "framer-motion";
+import { useRef } from "react";
+
+function getAnimationVariants(reduceMotion: boolean | null) {
+  return {
+    fadeUpVariant: {
+      hidden: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 30 },
+      visible: { 
+        opacity: 1, 
+        y: 0, 
+        transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } 
+      }
+    } as Variants,
+    staggerContainer: {
+      hidden: { opacity: 0 },
+      visible: {
+        opacity: 1,
+        transition: {
+          staggerChildren: reduceMotion ? 0 : 0.12,
+          delayChildren: 0.1,
+        }
+      }
+    } as Variants,
+    sectionVariant: {
+      hidden: reduceMotion ? { opacity: 0 } : { opacity: 0, y: 50, scale: 0.98, filter: "blur(10px)" },
+      visible: {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+        transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] }
+      }
+    } as Variants
+  };
+}
+
+function TextReveal({ children, className, as: Component = "h1" }: { children: string; className?: string; as?: any }) {
+  const words = children.split(" ");
+  const MotionComponent = motion(Component) as any;
   return (
+    <MotionComponent 
+      variants={{
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.2 } }
+      }}
+      className={className}
+    >
+      {words.map((word, i) => (
+        <span key={i} className="inline-block overflow-hidden" style={{ verticalAlign: "top" }}>
+          <motion.span
+            variants={{
+              hidden: { opacity: 0, y: "100%", rotate: 2 },
+              visible: { 
+                opacity: 1, 
+                y: "0%", 
+                rotate: 0,
+                transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] }
+              }
+            }}
+            className="inline-block origin-bottom-left"
+          >
+            {word}&nbsp;
+          </motion.span>
+        </span>
+      ))}
+    </MotionComponent>
+  );
+}
+
+export default function Home() {
+  const reduceMotion = useReducedMotion();
+  const { fadeUpVariant, staggerContainer, sectionVariant } = getAnimationVariants(reduceMotion);
+  const { scrollYProgress } = useScroll();
+
+  return (
+
     <main className="relative min-h-screen overflow-x-hidden bg-[#fbf7ef] text-[#17211c]">
       <SiteBackground />
       <Header />
 
       <section
         id="accueil"
-        className="relative mx-auto w-full max-w-7xl px-5 pb-14 pt-28 sm:px-8 sm:pt-32 lg:px-10"
+        className="relative mx-auto w-full max-w-7xl px-5 pb-28 pt-28 sm:px-8 sm:pt-32 lg:px-10 lg:pb-32"
       >
-        <div className="grid items-end gap-10 lg:grid-cols-[1.08fr_0.92fr]">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e2d8c9] bg-white/76 px-3 py-2 text-sm font-medium shadow-[0_14px_45px_rgba(72,48,30,0.08)] backdrop-blur">
+        <div className="grid items-center gap-10 lg:grid-cols-[1.08fr_0.92fr]">
+          <motion.div 
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+              }
+            }}
+            className="flex flex-col items-center text-center lg:items-start lg:text-left"
+          >
+            <motion.div 
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
+              className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e2d8c9] bg-white/76 px-3 py-2 text-sm font-medium shadow-[0_14px_45px_rgba(72,48,30,0.08)] backdrop-blur"
+            >
               <Sparkles className="size-4 text-[#ff6b4a]" aria-hidden="true" />
               Studio web pour entreprises ambitieuses au Maroc
-            </div>
-            <h1 className="max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
+            </motion.div>
+            <TextReveal className="max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
               Des sites qui donnent à votre entreprise une vraie présence.
-            </h1>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#5f665d] sm:text-lg sm:leading-8">
+            </TextReveal>
+            <motion.p 
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
+              className="mt-6 max-w-2xl text-base leading-7 text-[#5f665d] sm:text-lg sm:leading-8"
+            >
               EngiGrowth transforme votre offre en expérience claire, élégante et
               convaincante, avec une direction visuelle propre à votre activité.
-            </p>
-          </div>
-          <div className="relative rounded-[34px_10px_34px_10px] border border-[#e2d8c9] bg-white/80 p-3 shadow-[0_28px_90px_rgba(72,48,30,0.16)] backdrop-blur">
-            <div className="absolute -left-5 -top-5 hidden rounded-full bg-[#18c6a4] px-4 py-2 text-sm font-semibold text-[#17211c] shadow-lg sm:block">
-              Brief express
-            </div>
-            <div className="rounded-[26px_8px_26px_8px] bg-[#17211c] p-4 text-white">
-              <div className="flex items-center gap-3 rounded-full bg-white/8 px-4 py-3 text-sm text-white/72">
-                <Search className="size-5 shrink-0 text-[#ffb45f]" aria-hidden="true" />
-                <span>Site vitrine, e-commerce, landing page ou refonte</span>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2">
-                {["Message", "Design", "Contact"].map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-[18px_6px_18px_6px] bg-white px-3 py-4 text-center text-xs font-semibold text-[#17211c]"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
+            </motion.p>
+            <motion.div 
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
+              className="mt-8 flex flex-col gap-3 sm:flex-row"
+            >
               <Button
                 asChild
-                className="mt-4 h-12 w-full rounded-full bg-[#ff6b4a] px-6 font-semibold text-white shadow-[0_10px_30px_rgba(255,107,74,0.28)] hover:bg-[#ec5738]"
+                className="h-12 rounded-full bg-[#ff6b4a] px-6 font-semibold text-white shadow-[0_12px_32px_rgba(255,107,74,0.24)] hover:bg-[#ec5738]"
                 onClick={() =>
                   trackConversion("proposal_cta_click", { placement: "hero" })
                 }
               >
                 <a href="#contact">
-                  Obtenir une proposition
+                  Recevoir une proposition
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </a>
               </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12 grid gap-5 lg:grid-cols-[0.95fr_1.2fr_0.85fr]">
-          <HeroCard
-            title="Une présence en ligne qui rassure."
-            description="Message, preuve et contact réunis dans un parcours clair."
-            purple
-          />
-          <SearchDashboard />
-          <HeroCard
-            title="Un site construit pour générer des demandes."
-            description="Chaque section prépare le visiteur à vous écrire ou vous appeler."
-          />
+            </motion.div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <HeroVisual />
+          </motion.div>
         </div>
       </section>
 
-      <LogoStrip />
 
-      <section className="relative mx-auto w-full max-w-7xl px-5 py-12 sm:px-8 lg:px-10">
-        <div className="grid overflow-hidden rounded-[32px_10px_32px_10px] bg-[#17211c] text-white shadow-[0_26px_90px_rgba(72,48,30,0.18)] lg:grid-cols-[0.88fr_1.12fr]">
-          <div className="relative flex min-h-[360px] flex-col justify-between p-8 sm:p-10 lg:p-12">
-            <div>
-              <SectionEyebrow dark>Votre avantage</SectionEyebrow>
-              <h2 className="max-w-md text-balance text-4xl font-semibold leading-[0.98] sm:text-5xl">
-                Une image qui semble déjà installée.
-              </h2>
-              <p className="mt-6 max-w-lg text-base leading-7 text-white/70">
-                Votre site doit ressembler à une entreprise prête, structurée et
-                facile à choisir, pas à une simple brochure en ligne.
-              </p>
-            </div>
-            <Button
-              asChild
-              variant="outline"
-              className="mt-8 h-11 w-fit rounded-full border-white/20 bg-transparent px-5 text-white hover:bg-white hover:text-[#17211c]"
-              onClick={() =>
-                trackConversion("whatsapp_click", { placement: "advantage" })
-              }
-            >
-              <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer">
-                Discuter du projet
-                <MessageCircle className="size-4" aria-hidden="true" />
-              </a>
-            </Button>
-            <div
-              aria-hidden="true"
-              className="absolute inset-x-0 bottom-0 h-24 bg-[repeating-linear-gradient(135deg,rgba(255,180,95,0.62)_0_3px,transparent_3px_14px)]"
-            />
-          </div>
-          <div className="relative min-h-[360px] bg-[linear-gradient(120deg,rgba(24,198,164,0.16),rgba(255,107,74,0.22),rgba(255,180,95,0.14))] p-4 sm:p-6 lg:p-8">
-            <AnalyticsPanel />
-          </div>
-        </div>
-      </section>
-
-      <section
+      <motion.section
         id="services"
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative scroll-mt-24 bg-[#fffaf2] py-20"
       >
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div className="max-w-3xl">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <motion.div variants={fadeUpVariant} className="max-w-3xl">
             <SectionEyebrow>Solutions</SectionEyebrow>
-            <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            <TextReveal as="h2" className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
               Des pages qui rendent votre offre évidente.
-            </h2>
-          </div>
-          <div className="hidden gap-2 md:flex" aria-hidden="true">
-            <span className="flex size-10 items-center justify-center rounded-full border border-[#cdd5cc]">
+            </TextReveal>
+          </motion.div>
+          <motion.div variants={fadeUpVariant} className="hidden gap-2 md:flex" aria-hidden="true">
+            <span className="flex size-10 items-center justify-center rounded-full border border-[#e2d8c9]">
               <ChevronRight className="size-4 rotate-180" />
             </span>
-            <span className="flex size-10 items-center justify-center rounded-full border border-[#cdd5cc]">
+            <span className="flex size-10 items-center justify-center rounded-full border border-[#e2d8c9]">
               <ChevronRight className="size-4" />
             </span>
-          </div>
-        </div>
-        <div className="mt-9 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          </motion.div>
+        </motion.div>
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} className="mt-9 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {services.map((service, index) => (
-            <ServiceCard key={service.title} service={service} index={index} />
+            <motion.div key={service.title} variants={fadeUpVariant}>
+              <ServiceCard service={service} index={index} />
+            </motion.div>
           ))}
+        </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.72fr_1.28fr] lg:px-10">
-        <div>
-          <SectionEyebrow>Base de croissance</SectionEyebrow>
-          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-            Les signaux dont votre site a besoin pour convertir.
-          </h2>
-        </div>
-        <div className="space-y-3">
-          {metricRows.map(([value, label, note], index) => (
-            <MetricRow
-              key={label}
-              value={value}
-              label={label}
-              note={note}
-              active={index === 0 || index === 3}
-            />
+      <motion.section 
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative bg-[#fffaf2] px-5 pb-20 sm:px-8 lg:px-10"
+      >
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto grid w-full max-w-7xl gap-3 rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-[#fbf7ef] p-4 shadow-[0_18px_55px_rgba(72,48,30,0.08)] sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            "Design professionnel",
+            "100 % responsive",
+            "Rapide & optimisé",
+            "Pensé pour la conversion",
+          ].map((point, index) => (
+            <motion.div
+              key={point}
+              variants={fadeUpVariant}
+              className="rounded-[22px_7px_22px_7px] bg-[#fffaf2] px-5 py-4 text-center text-sm font-semibold text-[#17211c]"
+            >
+              {point}
+            </motion.div>
           ))}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
 
-      <section className="relative py-20">
-        <div className="relative overflow-hidden bg-[#101910] px-5 py-20 text-white sm:px-8 lg:px-10">
-          <div className="mx-auto max-w-7xl">
-            <div className="mx-auto max-w-2xl text-center">
-                <SectionEyebrow dark>Carte de conversion</SectionEyebrow>
+      <motion.section 
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative"
+      >
+        <div className="relative overflow-hidden bg-[#17211c] px-5 py-20 text-white sm:px-8 lg:px-10">
+          <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-7xl">
+            <motion.div variants={fadeUpVariant} className="mx-auto max-w-3xl text-center">
               <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-                Une lecture visuelle de ce qui bloque ou déclenche le contact.
+                Votre site ne devrait pas simplement exister. Il devrait
+                travailler pour votre entreprise.
               </h2>
-              <p className="mx-auto mt-5 max-w-lg text-sm leading-6 text-white/65">
-                Le design sert à montrer où renforcer votre message, vos preuves
-                et vos appels à l'action.
+              <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/68">
+                Un site lent, dépassé ou difficile à comprendre peut faire perdre
+                des clients potentiels avant même le premier contact.
               </p>
-            </div>
-            <div className="mx-auto mt-12 max-w-5xl rounded-[30px_10px_30px_10px] bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_90px_rgba(0,0,0,0.22)] sm:p-7">
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/78">
+                Nous combinons stratégie, design et développement pour créer une
+                expérience qui présente clairement votre offre et facilite le
+                passage à l’action.
+              </p>
+            </motion.div>
+            <motion.div variants={fadeUpVariant} className="mx-auto mt-12 max-w-5xl rounded-[30px_10px_30px_10px] bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_90px_rgba(0,0,0,0.22)] sm:p-7">
               <VisibilityChart />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
           <div
             aria-hidden="true"
             className="absolute inset-x-0 bottom-0 h-28 bg-[repeating-linear-gradient(135deg,rgba(255,180,95,0.92)_0_3px,transparent_3px_12px)] opacity-80"
           />
         </div>
-      </section>
+      </motion.section>
 
-      <section
+      <motion.section
         id="realisations"
-        className="relative mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 lg:px-10"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative scroll-mt-24 bg-[#fbf7ef] py-20"
       >
-        <div className="max-w-3xl">
+        <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
+        <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-3xl">
           <SectionEyebrow>Réalisations</SectionEyebrow>
           <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
             Une direction visuelle adaptée à chaque activité.
           </h2>
-        </div>
-        <div className="mt-9 grid gap-4 lg:grid-cols-2">
+        </motion.div>
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-9 grid gap-4 lg:grid-cols-2">
           {projects.map((project, index) => (
-            <ProjectCard key={project.name} project={project} index={index} />
+            <motion.div key={project.name} variants={fadeUpVariant}>
+              <ProjectCard project={project} index={index} />
+            </motion.div>
           ))}
+        </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section
+      <motion.section
         id="processus"
-        className="relative mx-auto grid w-full max-w-7xl gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative scroll-mt-24 bg-[#fff1d8] py-20"
       >
-        <div>
-          <SectionEyebrow>Méthode</SectionEyebrow>
-          <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-            Un projet cadré sans complexité inutile.
-          </h2>
-        </div>
-        <div className="grid gap-3">
-          {processSteps.map((step) => (
-            <article
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10">
+        <motion.div variants={fadeUpVariant} className="lg:sticky lg:top-32 lg:self-start">
+          <TextReveal as="h2" className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
+            Votre nouveau site en 3 étapes
+          </TextReveal>
+        </motion.div>
+        <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-20%" }} className="grid gap-3">
+          {processSteps.map((step, index) => (
+            <motion.article
               key={step.number}
+              variants={fadeUpVariant}
               className="grid gap-4 rounded-[26px_8px_26px_8px] border border-[#e2d8c9] bg-white p-5 sm:grid-cols-[5rem_1fr]"
             >
               <p className="text-4xl font-semibold leading-none text-[#ff6b4a]">
@@ -397,53 +450,142 @@ export default function Home() {
               </p>
               <div>
                 <h3 className="text-xl font-semibold">{step.title}</h3>
-                <p className="mt-2 leading-7 text-[#53605a]">
+                <p className="mt-3 leading-7 text-[#53605a]">
                   {step.description}
                 </p>
               </div>
-            </article>
+            </motion.article>
           ))}
+        </motion.div>
         </div>
-      </section>
+      </motion.section>
 
-      <section
+      <motion.section
         id="contact"
-        className="relative mx-auto grid w-full max-w-7xl gap-8 px-5 py-20 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10"
+        initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} variants={sectionVariant}
+        className="relative scroll-mt-24 bg-[#17211c] py-20 text-white"
       >
-        <div>
-          <SectionEyebrow>Get started</SectionEyebrow>
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10">
+        <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          <SectionEyebrow dark>Démarrer</SectionEyebrow>
           <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
             Lancez votre site avec EngiGrowth.
           </h2>
-          <p className="mt-5 max-w-md leading-7 text-[#53605a]">
+          <p className="mt-5 max-w-md leading-7 text-white/68">
             Décrivez votre projet en quelques mots. Nous vous répondrons avec une
             proposition adaptée à votre activité, votre objectif et votre budget.
           </p>
-          <Button
-            asChild
-            variant="outline"
-            className="mt-7 h-11 rounded-full border-[#e2d8c9] bg-white px-5 text-[#17211c] hover:bg-[#17211c] hover:text-white"
-            onClick={() =>
-              trackConversion("whatsapp_click", { placement: "contact" })
-            }
-          >
-            <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer">
-              Écrire sur WhatsApp
-              <MessageCircle className="size-4" aria-hidden="true" />
-            </a>
-          </Button>
-          <div className="mt-10 grid gap-3">
-            {outcomes.map((outcome) => (
-              <OutcomeItem key={outcome.title} outcome={outcome} />
-            ))}
-          </div>
+
+        </motion.div>
+        <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+          <LeadForm />
+        </motion.div>
         </div>
-        <LeadForm />
-      </section>
+      </motion.section>
 
       <Footer />
       <MobileStickyCta />
     </main>
+  );
+}
+
+function HeroVisual() {
+  const { scrollY } = useScroll();
+  const scale = useTransform(scrollY, [0, 800], [1, 0.85]);
+  const opacity = useTransform(scrollY, [0, 800], [1, 0.4]);
+
+  return (
+    <motion.div style={{ scale, opacity }} className="relative pb-8 pt-4 lg:pb-10 lg:pt-0 transform-gpu">
+      <div
+        aria-hidden="true"
+        className="hero-blob absolute -right-6 top-10 size-32 rounded-full bg-[#18c6a4]/18 blur-2xl"
+      />
+      <div
+        aria-hidden="true"
+        className="hero-blob hero-delay-2 absolute -left-8 bottom-16 size-36 rounded-full bg-[#ff6b4a]/16 blur-2xl"
+      />
+      <div className="relative mx-auto max-w-[540px]">
+        <img
+          src="/hero-engigrowth.png"
+          alt="Entrepreneur travaillant sur son ordinateur"
+          className="w-full rounded-[34px_10px_34px_10px] object-contain"
+        />
+
+        <div className="hero-reveal hero-glass hero-delay-1 absolute -left-5 top-12 hidden rounded-[22px_7px_22px_7px] border border-[#e2d8c9] bg-white/88 px-4 py-3 shadow-[0_18px_45px_rgba(72,48,30,0.14)] backdrop-blur-xl sm:block">
+          <div className="flex items-center gap-3">
+            <span className="flex size-9 items-center justify-center rounded-[14px_4px_14px_4px] bg-[#fff1d8]">
+              <Search className="size-4 text-[#ff6b4a]" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Message</p>
+              <p className="text-xs text-[#6b776f]">Offre claire</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-reveal hero-glass hero-delay-2 absolute -right-4 top-28 hidden rounded-full bg-[#17211c]/92 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(23,33,28,0.2)] backdrop-blur-xl sm:block">
+          Design premium
+        </div>
+
+        <div className="hero-reveal hero-glass hero-delay-3 absolute -right-3 bottom-20 hidden rounded-[18px_6px_18px_6px] bg-[#ffb45f]/92 px-4 py-3 text-sm font-semibold text-[#17211c] shadow-[0_18px_45px_rgba(72,48,30,0.16)] backdrop-blur-xl sm:block">
+          Prêt à convertir
+        </div>
+
+        <div className="hero-reveal hero-glass hero-delay-4 absolute -bottom-24 left-6 hidden w-72 rounded-[24px_8px_24px_8px] border border-[#e2d8c9] bg-[#fffaf2]/92 p-3 shadow-[0_22px_58px_rgba(72,48,30,0.18)] backdrop-blur-xl sm:block">
+          <div className="mb-3 flex items-center gap-2 border-b border-[#e2d8c9] pb-2">
+            <span className="size-2.5 rounded-full bg-[#ff6b4a]" />
+            <span className="size-2.5 rounded-full bg-[#ffb45f]" />
+            <span className="size-2.5 rounded-full bg-[#18c6a4]" />
+            <span className="ml-2 text-xs font-semibold text-[#6b776f]">
+              site moderne
+            </span>
+          </div>
+          <div className="rounded-[18px_6px_18px_6px] bg-[#17211c] p-4 text-white">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs text-white/55">Votre activité</p>
+                <p className="mt-1 text-lg font-semibold leading-tight">
+                  Claire, crédible, prête à convertir
+                </p>
+              </div>
+              <span className="rounded-full bg-[#ff6b4a] px-3 py-1 text-xs font-semibold">
+                CTA
+              </span>
+            </div>
+            <div className="mt-4 grid grid-cols-[1.1fr_0.9fr] gap-3">
+              <div className="space-y-2">
+                <span className="block h-2 rounded-full bg-white/60" />
+                <span className="block h-2 w-9/12 rounded-full bg-white/25" />
+                <span className="mt-3 block h-7 w-24 rounded-full bg-[#18c6a4]" />
+              </div>
+              <div className="flex h-14 items-end gap-1.5">
+                {[38, 54, 46, 72, 62].map((height, index) => (
+                  <span
+                    key={`${height}-${index}`}
+                    className={`flex-1 rounded-t-[6px] ${
+                      index % 2 === 0 ? "bg-[#ffb45f]" : "bg-[#18c6a4]"
+                    }`}
+                    style={{ height: `${height}%` }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-3 gap-2 sm:hidden">
+        {["Message", "Design", "Conversion"].map((item, index) => (
+          <span
+            key={item}
+            className="hero-reveal hero-glass rounded-[18px_6px_18px_6px] border border-[#e2d8c9] bg-white/88 px-3 py-3 text-center text-xs font-semibold shadow-sm backdrop-blur-xl"
+            style={{ animationDelay: `${index * 0.7}s` }}
+          >
+            {item}
+          </span>
+        ))}
+      </div>
+    </motion.div>
   );
 }
 
@@ -497,176 +639,16 @@ function Header() {
   );
 }
 
-function HeroCard({
-  title,
-  description,
-  purple = false,
-}: {
-  title: string;
-  description: string;
-  purple?: boolean;
-}) {
-  return (
-    <article
-      className={`min-h-[300px] rounded-[28px_8px_28px_8px] border p-6 ${
-        purple
-          ? "border-[#ffb18b] bg-[linear-gradient(135deg,#ffdfb8_0%,#ff8a64_62%,#fff3df_100%)]"
-          : "border-[#e2d8c9] bg-white"
-      }`}
-    >
-      <div className="flex h-full flex-col justify-between">
-        <div>
-          <h2 className="max-w-xs text-2xl font-semibold leading-tight">
-            {title}
-          </h2>
-          <p className="mt-5 text-sm leading-6 text-[#5f665d]">{description}</p>
-        </div>
-        <Button
-          asChild
-          className={`mt-8 h-11 w-fit rounded-full px-5 ${
-            purple
-              ? "bg-white text-[#17211c] hover:bg-[#17211c] hover:text-white"
-              : "bg-[#17211c] text-white hover:bg-[#2b372f]"
-          }`}
-          onClick={() =>
-            trackConversion("proposal_cta_click", {
-              placement: purple ? "hero_left" : "hero_right",
-            })
-          }
-        >
-          <a href="#contact">
-            Commencer
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </a>
-        </Button>
-      </div>
-    </article>
-  );
-}
-
-function SearchDashboard() {
-  return (
-    <article className="relative rounded-[10px_32px_10px_32px] border border-[#e2d8c9] bg-white p-5 shadow-[0_22px_70px_rgba(72,48,30,0.12)]">
-      <div aria-hidden="true" className="absolute -right-3 -top-3 size-20 rounded-full bg-[#18c6a4]/18" />
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold">Atelier de clarté</p>
-          <p className="text-xs text-[#6b776f]">Message, preuve, contact</p>
-        </div>
-        <span className="rounded-full bg-[#fff0d6] px-3 py-1 text-xs font-semibold text-[#8f4c24]">
-          Prêt
-        </span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          ["Visibilité", "87", "+12%"],
-          ["Mobile", "96", "Rapide"],
-          ["Contact", "4.2x", "Plus clair"],
-        ].map(([label, value, chip]) => (
-          <div key={label} className="rounded-[22px_7px_22px_7px] border border-[#efe2d2] bg-[#fffaf2] p-4">
-            <p className="text-xs font-medium text-[#6b776f]">{label}</p>
-            <p className="mt-2 text-3xl font-semibold leading-none">{value}</p>
-            <p className="mt-3 text-xs text-[#c55339]">{chip}</p>
-          </div>
-        ))}
-      </div>
-      <div className="mt-4 rounded-[24px_8px_24px_8px] border border-[#efe2d2] p-4">
-        <div className="mb-4 flex items-center justify-between text-xs text-[#6b776f]">
-          <span>Parcours visiteur</span>
-          <span>Objectif contact</span>
-        </div>
-        <div className="flex h-28 items-end gap-2">
-          {[36, 52, 44, 68, 58, 83, 72, 92].map((height, index) => (
-            <span
-              key={`${height}-${index}`}
-              className={`flex-1 rounded-t-[6px] ${
-                index % 3 === 0
-                  ? "bg-[#18c6a4]"
-                  : index % 3 === 1
-                    ? "bg-[#ff6b4a]"
-                    : "bg-[#17211c]"
-              }`}
-              style={{ height: `${height}%` }}
-            />
-          ))}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function LogoStrip() {
-  return (
-    <section className="relative mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 lg:px-10">
-      <div className="-rotate-1 rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-[#fff7ea] px-5 py-5 shadow-[0_18px_60px_rgba(72,48,30,0.08)]">
-        <div className="flex rotate-1 flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm font-semibold text-[#6b5f51]">
-          {["Brief", "Storyline", "Interface", "Mobile", "SEO", "Launch", "Growth"].map(
-          (item) => (
-            <span key={item} className="inline-flex items-center gap-2">
-              <span className="size-2 rounded-full bg-[#ff6b4a]" />
-              {item}
-            </span>
-          ),
-        )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AnalyticsPanel() {
-  return (
-    <div className="relative z-10 flex h-full items-center">
-      <div className="w-full rounded-[28px_8px_28px_8px] border border-white/15 bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_80px_rgba(0,0,0,0.25)]">
-        <div className="mb-5 flex items-center justify-between">
-          <div>
-            <p className="font-semibold">Vue d'ensemble</p>
-            <p className="text-xs text-[#6b776f]">Demandes, pages et sources</p>
-          </div>
-          <span className="rounded-full bg-[#ffe0d2] px-3 py-1 text-xs font-semibold text-[#9a3d2b]">
-            +31%
-          </span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            ["2.13%", "Taux contact"],
-            ["71", "Leads"],
-            ["8", "Pages clés"],
-          ].map(([value, label]) => (
-            <div key={label} className="rounded-[20px_7px_20px_7px] border border-[#efe2d2] bg-white p-4">
-              <p className="text-2xl font-semibold leading-none">{value}</p>
-              <p className="mt-2 text-xs text-[#6b776f]">{label}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 rounded-[24px_8px_24px_8px] border border-[#efe2d2] p-4">
-          <div className="mb-4 flex items-center gap-2 text-xs text-[#6b776f]">
-            <BarChart3 className="size-4" aria-hidden="true" />
-            <span>Demandes mensuelles</span>
-          </div>
-          <div className="flex h-28 items-end gap-2">
-            {[30, 42, 39, 56, 62, 72, 68, 82, 76, 88, 92, 96].map(
-              (height, index) => (
-                <span
-                  key={`${height}-${index}`}
-                  className="flex-1 rounded-t-[10px] bg-[linear-gradient(180deg,#ff6b4a_0%,#18c6a4_100%)]"
-                  style={{ height: `${height}%` }}
-                />
-              ),
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ServiceCard({ service, index }: { service: IconCard; index: number }) {
   const Icon = service.icon;
   const colors = ["bg-[#e0f7ef]", "bg-[#ffe6d7]", "bg-[#fff0bd]", "bg-[#e7edff]"];
 
   return (
-    <article className={`${colors[index]} group min-h-[310px] rounded-[28px_8px_28px_8px] border border-[#e2d8c9] p-6 transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_70px_rgba(72,48,30,0.12)]`}>
+    <motion.article 
+      whileHover={{ y: -8, scale: 1.01 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className={`${colors[index]} group min-h-[310px] rounded-[28px_8px_28px_8px] border border-[#e2d8c9] p-6 hover:shadow-[0_22px_70px_rgba(72,48,30,0.12)]`}
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#6b5f51]">
@@ -676,15 +658,19 @@ function ServiceCard({ service, index }: { service: IconCard; index: number }) {
             {service.title}
           </h3>
         </div>
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-[14px_4px_14px_4px] border border-[#17211c]/15 bg-white/65">
+        <motion.span 
+          className="flex size-9 shrink-0 items-center justify-center rounded-[14px_4px_14px_4px] border border-[#17211c]/15 bg-white/65"
+          whileHover={{ rotate: 15, scale: 1.1 }}
+          transition={{ duration: 0.3 }}
+        >
           <ArrowUpRight className="size-4" aria-hidden="true" />
-        </span>
+        </motion.span>
       </div>
       <div className="mt-9 rounded-[22px_7px_22px_7px] border border-white/80 bg-white/65 p-4 shadow-[0_18px_45px_rgba(72,48,30,0.08)]">
-        <Icon className="mb-8 size-7" aria-hidden="true" />
+        <Icon className="mb-8 size-7 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
         <p className="text-sm leading-6 text-[#5f665d]">{service.description}</p>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -764,17 +750,19 @@ function ProjectCard({
   index: number;
 }) {
   return (
-    <article
+    <motion.article
       tabIndex={0}
+      whileHover={{ y: -6, scale: 1.01 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       onFocus={() => trackConversion("portfolio_view", { project: project.name })}
       onMouseEnter={() =>
         trackConversion("portfolio_view", { project: project.name })
       }
-      className="group rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-white p-3 outline-none transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_80px_rgba(72,48,30,0.12)] focus-visible:ring-2 focus-visible:ring-[#ff6b4a]"
+      className="group rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-white p-3 outline-none hover:shadow-[0_24px_80px_rgba(72,48,30,0.12)] focus-visible:ring-2 focus-visible:ring-[#ff6b4a]"
     >
       <div className={`relative min-h-[260px] overflow-hidden rounded-[22px_6px_22px_6px] bg-gradient-to-br ${project.palette} p-5`}>
         <div className="absolute inset-x-0 bottom-0 h-20 bg-[repeating-linear-gradient(135deg,rgba(23,33,28,0.18)_0_2px,transparent_2px_10px)]" />
-        <div className="relative mx-auto max-w-md rounded-[24px_8px_24px_8px] border border-white/75 bg-white/80 p-4 shadow-[0_22px_60px_rgba(72,48,30,0.14)] backdrop-blur">
+        <div className="relative mx-auto max-w-md rounded-[24px_8px_24px_8px] border border-white/75 bg-white/80 p-4 shadow-[0_22px_60px_rgba(72,48,30,0.14)] backdrop-blur transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 group-hover:-translate-y-2">
           <div className="mb-4 flex items-center gap-2">
             <span className="size-2.5 rounded-full bg-[#f16d8a]" />
             <span className="size-2.5 rounded-full bg-[#facf5a]" />
@@ -805,11 +793,11 @@ function ProjectCard({
             {project.description}
           </p>
         </div>
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px_5px_16px_5px] border border-[#e2d8c9] transition group-hover:bg-[#17211c] group-hover:text-white">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px_5px_16px_5px] border border-[#e2d8c9] transition duration-300 group-hover:bg-[#17211c] group-hover:text-white group-hover:rotate-12 group-hover:scale-110">
           <ExternalLink className="size-4" aria-hidden="true" />
         </span>
       </div>
-    </article>
+    </motion.article>
   );
 }
 
@@ -878,7 +866,7 @@ function LeadForm() {
     <form
       onSubmit={onSubmit}
       onFocus={startForm}
-      className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white p-5 shadow-[0_22px_80px_rgba(72,48,30,0.12)] sm:p-7"
+      className="rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-white p-5 text-[#17211c] shadow-[0_22px_80px_rgba(72,48,30,0.12)] sm:p-7"
       noValidate
     >
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -950,7 +938,7 @@ function LeadForm() {
       ) : null}
       {status === "error" && Object.keys(errors).length === 0 ? (
         <div className="mt-5 rounded-[8px] border border-[#f0bcc9] bg-[#fff0f4] p-4 text-sm text-[#a83c58]">
-          Une erreur est survenue. Vous pouvez réessayer ou écrire sur WhatsApp.
+          Une erreur est survenue. Vous pouvez réessayer.
         </div>
       ) : null}
       <Button
@@ -1077,10 +1065,14 @@ function SectionEyebrow({
 }
 
 function SiteBackground() {
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, 150]);
+  const y2 = useTransform(scrollY, [0, 1000], [0, -80]);
+
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-[720px] bg-[linear-gradient(145deg,#fff1d8_0%,#e2f7ee_46%,#fbf7ef_100%)]" />
-      <div className="absolute inset-x-0 top-[120px] h-[460px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,107,74,0.18),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(24,198,164,0.18),transparent_24%)]" />
+      <motion.div style={{ y: y1 }} className="absolute inset-x-0 top-0 h-[720px] bg-[linear-gradient(145deg,#fff1d8_0%,#e2f7ee_46%,#fbf7ef_100%)]" />
+      <motion.div style={{ y: y2 }} className="absolute inset-x-0 top-[120px] h-[460px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,107,74,0.18),transparent_28%),radial-gradient(circle_at_82%_20%,rgba(24,198,164,0.18),transparent_24%)]" />
       <div className="absolute inset-x-0 top-[110px] h-[500px] bg-[linear-gradient(135deg,rgba(23,33,28,0.06)_0_1px,transparent_1px_18px)] opacity-50" />
       <div className="absolute inset-x-0 bottom-0 h-[360px] bg-[linear-gradient(180deg,transparent_0%,rgba(255,241,216,0.75)_100%)]" />
     </div>
