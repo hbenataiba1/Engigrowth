@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, type ReactNode, useEffect, useState } from "react";
+import { type FormEvent, type ReactNode, createContext, useContext, useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -9,6 +9,7 @@ import {
   ChevronRight,
   ExternalLink,
   Gauge,
+  Globe,
   LayoutTemplate,
   type LucideIcon,
   Mail,
@@ -36,149 +37,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { submitLead, type LeadPayload } from "@/lib/leads";
 import { SITE_CONFIG } from "@/lib/site-config";
 import { trackConversion } from "@/lib/tracking";
+import { type Dictionary, type Locale, dictionaries } from "@/lib/i18n";
 
 type FieldErrors = Partial<Record<keyof LeadPayload | "email" | "contactMethod", string>>;
 
-type IconCard = {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  tag: string;
-};
+const serviceIcons: LucideIcon[] = [LayoutTemplate, ShoppingBag, Target, Sparkles];
 
-const navLinks = [
-  { label: "Services", href: "#services" },
-  { label: "Réalisations", href: "#realisations" },
-  { label: "Méthode", href: "#processus" },
-  { label: "Contact", href: "#contact" },
+const projectPalettes = [
+  "from-[#e2f7ee] via-[#fff1d8] to-[#ffe6d7]",
+  "from-[#fff8e7] via-[#e7edff] to-[#dff6ee]",
+  "from-[#ffe0d2] via-[#fff0bd] to-[#e2f7ee]",
+  "from-[#ddf7ee] via-[#fff7ea] to-[#ffe6d7]",
 ];
 
-const services: IconCard[] = [
-  {
-    title: "Site vitrine",
-    description:
-      "Présentez votre activité avec une page claire, crédible et facile à parcourir.",
-    icon: LayoutTemplate,
-    tag: "Crédibilité",
-  },
-  {
-    title: "E-commerce",
-    description:
-      "Mettez vos produits en valeur avec un parcours simple du catalogue au contact.",
-    icon: ShoppingBag,
-    tag: "Vente",
-  },
-  {
-    title: "Landing page",
-    description:
-      "Transformez le trafic de vos campagnes en demandes de devis plus qualifiées.",
-    icon: Target,
-    tag: "Conversion",
-  },
-  {
-    title: "Refonte",
-    description:
-      "Modernisez votre site existant pour mieux refléter la qualité de votre entreprise.",
-    icon: Sparkles,
-    tag: "Image",
-  },
-];
+const LocaleContext = createContext<{ locale: Locale; t: Dictionary }>({
+  locale: "fr",
+  t: dictionaries.fr,
+});
 
-const outcomes: IconCard[] = [
-  {
-    title: "Message plus lisible",
-    description:
-      "Vos visiteurs comprennent plus vite votre offre, vos avantages et la prochaine action.",
-    icon: Search,
-    tag: "Clarté",
-  },
-  {
-    title: "Confiance renforcée",
-    description:
-      "Vos preuves, services et coordonnées deviennent plus visibles et plus rassurants.",
-    icon: ShieldCheck,
-    tag: "Preuve",
-  },
-  {
-    title: "Parcours fluide",
-    description:
-      "Chaque section guide naturellement le visiteur vers une demande de contact.",
-    icon: MousePointerClick,
-    tag: "Contact",
-  },
-  {
-    title: "Base propre",
-    description:
-      "Le site est pensé pour la rapidité, le mobile et les bases du référencement.",
-    icon: Gauge,
-    tag: "Technique",
-  },
-];
+function useLocale() {
+  return useContext(LocaleContext);
+}
 
-const projects = [
-  {
-    name: "Atlas Conseil",
-    industry: "Cabinet de conseil",
-    description: "Site vitrine premium orienté prise de rendez-vous B2B.",
-    palette: "from-[#e2f7ee] via-[#fff1d8] to-[#ffe6d7]",
-  },
-  {
-    name: "Casa Home",
-    industry: "Immobilier",
-    description: "Landing page claire pour rassurer et générer des demandes.",
-    palette: "from-[#fff8e7] via-[#e7edff] to-[#dff6ee]",
-  },
-  {
-    name: "Marrakech Atelier",
-    industry: "Commerce en ligne",
-    description: "Parcours e-commerce simple avec une marque bien mise en avant.",
-    palette: "from-[#ffe0d2] via-[#fff0bd] to-[#e2f7ee]",
-  },
-  {
-    name: "Nour Santé",
-    industry: "Service médical",
-    description: "Interface rassurante, rapide sur mobile, pensée pour le contact.",
-    palette: "from-[#ddf7ee] via-[#fff7ea] to-[#ffe6d7]",
-  },
-];
-
-const processSteps = [
-  {
-    number: "01",
-    title: "Parlez-nous de votre projet",
-    description:
-      "Expliquez-nous votre activité, vos objectifs et vos besoins.",
-  },
-  {
-    number: "02",
-    title: "Recevez votre proposition",
-    description:
-      "Nous définissons la solution, le périmètre et une proposition adaptée.",
-  },
-  {
-    number: "03",
-    title: "Nous créons votre site",
-    description:
-      "Design, développement, optimisation et mise en ligne.",
-  },
-];
-
-const metricRows = [
-  ["100%", "mobile-first", "Votre site reste lisible sur les écrans de vos clients."],
-  ["4", "formats de site", "Vitrine, e-commerce, landing page ou refonte."],
-  ["48H", "pour cadrer", "Une proposition claire pour décider vite."],
-  ["24/7", "présence en ligne", "Votre entreprise reste trouvable et contactable."],
-];
-
-const siteTypes = [
-  "Site vitrine",
-  "E-commerce",
-  "Landing page",
-  "Refonte",
-  "Je ne sais pas encore",
-];
-
-import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion, Variants } from "framer-motion";
+import { motion, AnimatePresence, animate, useInView, useScroll, useTransform, useReducedMotion, Variants } from "framer-motion";
 import { useRef } from "react";
 
 function getAnimationVariants(reduceMotion: boolean | null) {
@@ -226,7 +107,7 @@ function TextReveal({ children, className, as: Component = "h1" }: { children: s
       className={className}
     >
       {words.map((word, i) => (
-        <span key={i} className="inline-block overflow-hidden" style={{ verticalAlign: "top" }}>
+        <span key={i} className="-mb-[0.14em] inline-block overflow-hidden pb-[0.14em]" style={{ verticalAlign: "top" }}>
           <motion.span
             variants={{
               hidden: { opacity: 0, y: "100%", rotate: 2 },
@@ -247,10 +128,24 @@ function TextReveal({ children, className, as: Component = "h1" }: { children: s
   );
 }
 
-export default function Home() {
+export default function SitePage({ locale }: { locale: Locale }) {
+  const t = dictionaries[locale];
+
+  useEffect(() => {
+    document.documentElement.lang = t.htmlLang;
+  }, [t.htmlLang]);
+
+  return (
+    <LocaleContext.Provider value={{ locale, t }}>
+      <Home />
+    </LocaleContext.Provider>
+  );
+}
+
+function Home() {
+  const { t } = useLocale();
   const reduceMotion = useReducedMotion();
   const { fadeUpVariant, staggerContainer, sectionVariant } = getAnimationVariants(reduceMotion);
-  const { scrollYProgress } = useScroll();
 
   return (
 
@@ -275,22 +170,14 @@ export default function Home() {
             }}
             className="flex flex-col items-center text-center lg:items-start lg:text-left"
           >
-            <motion.div 
-              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
-              className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#e2d8c9] bg-white/76 px-3 py-2 text-sm font-medium shadow-[0_14px_45px_rgba(72,48,30,0.08)] backdrop-blur"
-            >
-              <Sparkles className="size-4 text-[#ff6b4a]" aria-hidden="true" />
-              Studio web pour entreprises ambitieuses
-            </motion.div>
             <TextReveal className="max-w-4xl text-balance text-5xl font-semibold leading-[0.92] tracking-normal sm:text-6xl lg:text-7xl">
-              Des sites qui donnent à votre entreprise une vraie présence.
+              {t.hero.title}
             </TextReveal>
             <motion.p 
               variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
               className="mt-6 max-w-2xl text-base leading-7 text-[#5f665d] sm:text-lg sm:leading-8"
             >
-              EngiGrowth transforme votre offre en expérience claire, élégante et
-              convaincante, avec une direction visuelle propre à votre activité.
+              {t.hero.description}
             </motion.p>
             <motion.div 
               variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } } }}
@@ -304,7 +191,7 @@ export default function Home() {
                 }
               >
                 <a href="#contact">
-                  Recevoir une proposition
+                  {t.cta.proposal}
                   <ArrowRight className="size-4" aria-hidden="true" />
                 </a>
               </Button>
@@ -329,14 +216,14 @@ export default function Home() {
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
           <motion.div variants={fadeUpVariant} className="max-w-3xl">
-            <SectionEyebrow>Solutions</SectionEyebrow>
+            <SectionEyebrow>{t.solutions.eyebrow}</SectionEyebrow>
             <TextReveal as="h2" className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-              Des pages qui rendent votre offre évidente.
+              {t.solutions.title}
             </TextReveal>
           </motion.div>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-10%" }} className="mt-9 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((service, index) => (
+          {t.solutions.items.map((service, index) => (
             <motion.div key={service.title} variants={fadeUpVariant}>
               <ServiceCard service={service} index={index} />
             </motion.div>
@@ -350,12 +237,7 @@ export default function Home() {
         className="relative bg-[#fffaf2] px-5 pb-20 sm:px-8 lg:px-10"
       >
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto grid w-full max-w-7xl gap-3 rounded-[30px_10px_30px_10px] border border-[#e2d8c9] bg-[#fbf7ef] p-4 shadow-[0_18px_55px_rgba(72,48,30,0.08)] sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            "Design professionnel",
-            "100 % responsive",
-            "Rapide & optimisé",
-            "Pensé pour la conversion",
-          ].map((point, index) => (
+          {t.highlights.map((point) => (
             <motion.div
               key={point}
               variants={fadeUpVariant}
@@ -375,17 +257,13 @@ export default function Home() {
           <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mx-auto max-w-7xl">
             <motion.div variants={fadeUpVariant} className="mx-auto max-w-3xl text-center">
               <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-                Votre site ne devrait pas simplement exister. Il devrait
-                travailler pour votre entreprise.
+                {t.pitch.title}
               </h2>
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-white/68">
-                Un site lent, dépassé ou difficile à comprendre peut faire perdre
-                des clients potentiels avant même le premier contact.
+                {t.pitch.p1}
               </p>
               <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-white/78">
-                Nous combinons stratégie, design et développement pour créer une
-                expérience qui présente clairement votre offre et facilite le
-                passage à l’action.
+                {t.pitch.p2}
               </p>
             </motion.div>
             <motion.div variants={fadeUpVariant} className="mx-auto mt-12 max-w-5xl rounded-[30px_10px_30px_10px] bg-[#fffaf2] p-5 text-[#17211c] shadow-[0_28px_90px_rgba(0,0,0,0.22)] sm:p-7">
@@ -406,13 +284,13 @@ export default function Home() {
       >
         <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
         <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }} className="max-w-3xl">
-          <SectionEyebrow>Réalisations</SectionEyebrow>
+          <SectionEyebrow>{t.projects.eyebrow}</SectionEyebrow>
           <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-            Une direction visuelle adaptée à chaque activité.
+            {t.projects.title}
           </h2>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }} className="mt-9 grid gap-4 lg:grid-cols-2">
-          {projects.map((project, index) => (
+          {t.projects.items.map((project, index) => (
             <motion.div key={project.name} variants={fadeUpVariant}>
               <ProjectCard project={project} index={index} />
             </motion.div>
@@ -429,18 +307,18 @@ export default function Home() {
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10">
         <motion.div variants={fadeUpVariant} className="lg:sticky lg:top-32 lg:self-start">
           <TextReveal as="h2" className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-            Votre nouveau site en 3 étapes
+            {t.process.title}
           </TextReveal>
         </motion.div>
         <motion.div variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-20%" }} className="grid gap-3">
-          {processSteps.map((step, index) => (
+          {t.process.steps.map((step, index) => (
             <motion.article
-              key={step.number}
+              key={step.title}
               variants={fadeUpVariant}
               className="grid gap-4 rounded-[26px_8px_26px_8px] border border-[#e2d8c9] bg-white p-5 sm:grid-cols-[5rem_1fr]"
             >
               <p className="text-4xl font-semibold leading-none text-[#ff6b4a]">
-                {step.number}
+                {String(index + 1).padStart(2, "0")}
               </p>
               <div>
                 <h3 className="text-xl font-semibold">{step.title}</h3>
@@ -461,13 +339,12 @@ export default function Home() {
       >
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:px-10">
         <motion.div variants={fadeUpVariant} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <SectionEyebrow dark>Démarrer</SectionEyebrow>
+          <SectionEyebrow dark>{t.contact.eyebrow}</SectionEyebrow>
           <h2 className="text-balance text-4xl font-semibold leading-[0.96] sm:text-5xl">
-            Lancez votre site avec EngiGrowth.
+            {t.contact.title}
           </h2>
           <p className="mt-5 max-w-md leading-7 text-white/68">
-            Décrivez votre projet en quelques mots. Nous vous répondrons avec une
-            proposition adaptée à votre activité, votre objectif et votre budget.
+            {t.contact.description}
           </p>
 
         </motion.div>
@@ -484,66 +361,64 @@ export default function Home() {
 }
 
 function HeroVisual() {
-  const { scrollY } = useScroll();
-  const scale = useTransform(scrollY, [0, 800], [1, 0.85]);
-  const opacity = useTransform(scrollY, [0, 800], [1, 0.4]);
-
+  const { t } = useLocale();
   return (
-    <motion.div style={{ scale, opacity }} className="relative pb-8 pt-4 lg:pb-10 lg:pt-0 transform-gpu">
+    <div className="relative pb-8 pt-4 lg:pb-10 lg:pt-0">
       <div
         aria-hidden="true"
-        className="hero-blob absolute -right-6 top-10 size-32 rounded-full bg-[#18c6a4]/18 blur-2xl"
+        className="hero-blob absolute -right-10 top-4 size-56 rounded-full bg-[#18c6a4]/25 blur-3xl"
       />
       <div
         aria-hidden="true"
-        className="hero-blob hero-delay-2 absolute -left-8 bottom-16 size-36 rounded-full bg-[#ff6b4a]/16 blur-2xl"
+        className="hero-blob absolute -left-12 bottom-10 size-56 rounded-full bg-[#ffb45f]/25 blur-3xl"
       />
       <div className="relative mx-auto max-w-[540px]">
         <img
           src="/hero-engigrowth.png"
-          alt="Entrepreneur travaillant sur son ordinateur"
-          className="w-full rounded-[34px_10px_34px_10px] object-contain"
+          decoding="async"
+          alt={t.hero.imageAlt}
+          className="w-full rounded-[28px] object-contain ring-1 ring-black/5 shadow-[0_30px_80px_-30px_rgba(23,33,28,0.35)]"
         />
 
-        <div className="hero-reveal hero-glass hero-delay-1 absolute -left-5 top-12 hidden rounded-[22px_7px_22px_7px] border border-[#e2d8c9] bg-white/88 px-4 py-3 shadow-[0_18px_45px_rgba(72,48,30,0.14)] backdrop-blur-xl sm:block">
+        <div className="hero-reveal hero-glass hero-delay-1 absolute -left-2 top-12 hidden lg:-left-5 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 shadow-[0_10px_30px_-10px_rgba(23,33,28,0.2)] backdrop-blur-xl md:block">
           <div className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-[14px_4px_14px_4px] bg-[#fff1d8]">
               <Search className="size-4 text-[#ff6b4a]" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-sm font-semibold">Message</p>
-              <p className="text-xs text-[#6b776f]">Offre claire</p>
+              <p className="text-sm font-semibold">{t.hero.cardMessage}</p>
+              <p className="text-xs text-[#6b776f]">{t.hero.cardMessageSub}</p>
             </div>
           </div>
         </div>
 
-        <div className="hero-reveal hero-glass hero-delay-2 absolute -right-4 top-28 hidden rounded-full bg-[#17211c]/92 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(23,33,28,0.2)] backdrop-blur-xl sm:block">
-          Design premium
+        <div className="hero-reveal hero-glass hero-delay-2 absolute -right-2 top-28 hidden lg:-right-4 rounded-full bg-[#17211c]/85 px-4 py-2.5 text-sm font-medium text-white shadow-[0_10px_30px_-10px_rgba(23,33,28,0.4)] backdrop-blur-xl md:block">
+          {t.hero.cardDesign}
         </div>
 
-        <div className="hero-reveal hero-glass hero-delay-3 absolute -right-3 bottom-20 hidden rounded-[18px_6px_18px_6px] bg-[#ffb45f]/92 px-4 py-3 text-sm font-semibold text-[#17211c] shadow-[0_18px_45px_rgba(72,48,30,0.16)] backdrop-blur-xl sm:block">
-          Prêt à convertir
+        <div className="hero-reveal hero-glass hero-delay-3 absolute -right-2 bottom-20 hidden lg:-right-3 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-sm font-medium text-[#17211c] shadow-[0_10px_30px_-10px_rgba(23,33,28,0.2)] backdrop-blur-xl md:block">
+          {t.hero.cardConvert}
         </div>
 
-        <div className="hero-reveal hero-glass hero-delay-4 absolute -bottom-24 left-6 hidden w-72 rounded-[24px_8px_24px_8px] border border-[#e2d8c9] bg-[#fffaf2]/92 p-3 shadow-[0_22px_58px_rgba(72,48,30,0.18)] backdrop-blur-xl sm:block">
+        <div className="hero-reveal hero-glass hero-delay-4 absolute -bottom-24 left-4 hidden w-64 lg:left-6 lg:w-72 rounded-3xl border border-white/60 bg-white/70 p-3 shadow-[0_20px_50px_-20px_rgba(23,33,28,0.3)] backdrop-blur-xl md:block">
           <div className="mb-3 flex items-center gap-2 border-b border-[#e2d8c9] pb-2">
             <span className="size-2.5 rounded-full bg-[#ff6b4a]" />
             <span className="size-2.5 rounded-full bg-[#ffb45f]" />
             <span className="size-2.5 rounded-full bg-[#18c6a4]" />
             <span className="ml-2 text-xs font-semibold text-[#6b776f]">
-              site moderne
+              {t.hero.cardBrowser}
             </span>
           </div>
-          <div className="rounded-[18px_6px_18px_6px] bg-[#17211c] p-4 text-white">
+          <div className="rounded-2xl bg-[#17211c] p-4 text-white">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-xs text-white/55">Votre activité</p>
+                <p className="text-xs text-white/55">{t.hero.cardActivity}</p>
                 <p className="mt-1 text-lg font-semibold leading-tight">
-                  Claire, crédible, prête à convertir
+                  {t.hero.cardHeadline}
                 </p>
               </div>
               <span className="rounded-full bg-[#ff6b4a] px-3 py-1 text-xs font-semibold">
-                CTA
+                {t.hero.cardCta}
               </span>
             </div>
             <div className="mt-4 grid grid-cols-[1.1fr_0.9fr] gap-3">
@@ -554,12 +429,22 @@ function HeroVisual() {
               </div>
               <div className="flex h-14 items-end gap-1.5">
                 {[38, 54, 46, 72, 62].map((height, index) => (
-                  <span
+                  <motion.span
                     key={`${height}-${index}`}
-                    className={`flex-1 rounded-t-[6px] ${
+                    className={`flex-1 origin-bottom rounded-t-md ${
                       index % 2 === 0 ? "bg-[#ffb45f]" : "bg-[#18c6a4]"
                     }`}
                     style={{ height: `${height}%` }}
+                    initial={{ scaleY: 0 }}
+                    animate={{ scaleY: [0, 1, 1, 0.82, 1] }}
+                    transition={{
+                      duration: 5,
+                      times: [0, 0.2, 0.5, 0.75, 1],
+                      delay: 1 + index * 0.12,
+                      ease: [0.22, 1, 0.36, 1],
+                      repeat: Infinity,
+                      repeatDelay: 2,
+                    }}
                   />
                 ))}
               </div>
@@ -568,30 +453,79 @@ function HeroVisual() {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 sm:hidden">
-        {["Message", "Design", "Conversion"].map((item, index) => (
+      <div className="mt-4 grid grid-cols-3 gap-2 md:hidden">
+        {t.hero.chips.map((item, index) => (
           <span
             key={item}
-            className="hero-reveal hero-glass rounded-[18px_6px_18px_6px] border border-[#e2d8c9] bg-white/88 px-3 py-3 text-center text-xs font-semibold shadow-sm backdrop-blur-xl"
+            className="hero-reveal rounded-2xl border border-white/60 bg-white/70 px-3 py-3 text-center text-xs font-medium shadow-sm backdrop-blur-xl"
             style={{ animationDelay: `${index * 0.7}s` }}
           >
             {item}
           </span>
         ))}
       </div>
-    </motion.div>
+    </div>
+  );
+}
+
+function LanguageSwitch() {
+  const { locale } = useLocale();
+  const options: { code: Locale; label: string; href: string; name: string }[] = [
+    { code: "fr", label: "FR", href: "/", name: "Français" },
+    { code: "en", label: "EN", href: "/en", name: "English" },
+  ];
+
+  return (
+    <div
+      role="group"
+      aria-label="Language"
+      className="relative ml-auto flex items-center gap-1 rounded-full border border-[#e2d8c9] bg-white/80 p-1 shadow-sm backdrop-blur md:ml-0"
+    >
+      <Globe className="ml-2 size-3.5 text-[#6b776f]" aria-hidden="true" />
+      <div className="relative grid grid-cols-2">
+        <span
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-1/2 rounded-full bg-[#17211c] shadow-sm transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: `translateX(${locale === "fr" ? 0 : 100}%)` }}
+        />
+        {options.map((option) => (
+          <a
+            key={option.code}
+            href={option.href}
+            hrefLang={option.code}
+            lang={option.code}
+            title={option.name}
+            aria-label={option.name}
+            aria-current={locale === option.code ? "true" : undefined}
+            className={`relative z-10 px-3 py-1.5 text-center text-xs font-semibold tracking-wide transition-colors duration-300 ${
+              locale === option.code ? "text-white" : "text-[#53605a] hover:text-[#17211c]"
+            }`}
+          >
+            {option.label}
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function Header() {
+  const { locale, t } = useLocale();
+  const navLinks = [
+    { label: t.nav.services, href: "#services" },
+    { label: t.nav.projects, href: "#realisations" },
+    { label: t.nav.method, href: "#processus" },
+    { label: t.nav.contact, href: "#contact" },
+  ];
+
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <div className="bg-[#17211c] px-5 py-2 text-center text-xs font-semibold text-[#fff7ea]">
-        Sites web clairs, rapides et distinctifs pour entreprises
+        {t.topBanner}
       </div>
       <nav className="border-b border-[#e2d8c9]/80 bg-[#fbf7ef]/86 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
-          <a href="#accueil" className="flex items-center gap-3" aria-label="Accueil">
+          <a href="#accueil" className="flex items-center gap-3" aria-label={t.homeLabel}>
             <img
               src="/logo-engigrowth.png"
               alt=""
@@ -608,6 +542,7 @@ function Header() {
               </a>
             ))}
           </div>
+          <LanguageSwitch />
           <Button
             asChild
             className="hidden h-10 rounded-full bg-[#17211c] px-5 text-white hover:bg-[#2b372f] md:inline-flex"
@@ -615,7 +550,7 @@ function Header() {
               trackConversion("proposal_cta_click", { placement: "nav" })
             }
           >
-            <a href="#contact">Recevoir une proposition</a>
+            <a href="#contact">{t.cta.proposal}</a>
           </Button>
           <Button
             asChild
@@ -623,7 +558,7 @@ function Header() {
             variant="outline"
             className="rounded-full border-[#e2d8c9] bg-white text-[#17211c] hover:bg-[#17211c] hover:text-white md:hidden"
           >
-            <a href="#contact" aria-label="Recevoir une proposition">
+            <a href="#contact" aria-label={t.cta.proposal}>
               <Send className="size-4" aria-hidden="true" />
             </a>
           </Button>
@@ -633,8 +568,14 @@ function Header() {
   );
 }
 
-function ServiceCard({ service, index }: { service: IconCard; index: number }) {
-  const Icon = service.icon;
+function ServiceCard({
+  service,
+  index,
+}: {
+  service: Dictionary["solutions"]["items"][number];
+  index: number;
+}) {
+  const Icon = serviceIcons[index];
   const colors = ["bg-[#e0f7ef]", "bg-[#ffe6d7]", "bg-[#fff0bd]", "bg-[#e7edff]"];
 
   return (
@@ -661,61 +602,45 @@ function ServiceCard({ service, index }: { service: IconCard; index: number }) {
         </motion.span>
       </div>
       <div className="mt-9 rounded-[22px_7px_22px_7px] border border-white/80 bg-white/65 p-4 shadow-[0_18px_45px_rgba(72,48,30,0.08)]">
-        <Icon className="mb-8 size-7 transition-transform duration-300 group-hover:scale-110" aria-hidden="true" />
+        <Icon className="mb-8 size-7 transition-transform duration-500 ease-out group-hover:-translate-y-1 group-hover:scale-110" aria-hidden="true" />
         <p className="text-sm leading-6 text-[#5f665d]">{service.description}</p>
       </div>
     </motion.article>
   );
 }
 
-function MetricRow({
-  value,
-  label,
-  note,
-  active,
-}: {
-  value: string;
-  label: string;
-  note: string;
-  active: boolean;
-}) {
-  return (
-    <article className={`grid gap-4 rounded-[28px_8px_28px_8px] border p-5 sm:grid-cols-[16rem_1fr] sm:items-center ${active ? "border-[#17211c] bg-[#17211c] text-white" : "border-[#e2d8c9] bg-white/55 text-[#b2a99c]"}`}>
-      <div className="flex items-center gap-4">
-        <span className={`flex size-16 shrink-0 items-center justify-center rounded-[22px_6px_22px_6px] ${active ? "bg-[#ffb45f] text-[#17211c]" : "bg-[#fff0dc]"}`}>
-          <ArrowRight className="-rotate-45 size-8" aria-hidden="true" />
-        </span>
-        <div>
-          <p className="text-5xl font-semibold leading-none sm:text-6xl">{value}</p>
-          <p className="mt-1 text-sm">{label}</p>
-        </div>
-      </div>
-      <p className={`max-w-lg text-sm leading-6 ${active ? "text-white/74" : "text-[#a99d8f]"}`}>
-        {note}
-      </p>
-    </article>
-  );
+function CountUp({ to, delay = 0 }: { to: number; delay?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-10%" });
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    const controls = animate(0, to, {
+      duration: 1.4,
+      delay,
+      ease: [0.22, 1, 0.36, 1],
+      onUpdate: (v) => setN(Math.round(v)),
+    });
+    return () => controls.stop();
+  }, [inView, to, delay]);
+
+  return <span ref={ref}>{n}</span>;
 }
 
 function VisibilityChart() {
-  const rows = [
-    ["Clarté de l'offre", 96],
-    ["Preuves", 84],
-    ["Contact", 91],
-    ["Mobile", 88],
-    ["Vitesse", 79],
-    ["SEO local", 72],
-  ] as const;
+  const { t } = useLocale();
+  const rows = t.chart.rows;
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <div>
-          <p className="font-semibold">Audit de conversion</p>
-          <p className="text-xs text-[#6b776f]">Prototype avant mise en ligne</p>
+          <p className="font-semibold">{t.chart.title}</p>
+          <p className="text-xs text-[#6b776f]">{t.chart.subtitle}</p>
         </div>
         <span className="rounded-full bg-[#ffe6d7] px-3 py-1 text-xs font-semibold text-[#a3422e]">
-          Priorisé
+          {t.chart.badge}
         </span>
       </div>
       <div className="space-y-4">
@@ -723,12 +648,18 @@ function VisibilityChart() {
           <div key={label} className="grid gap-3 sm:grid-cols-[11rem_1fr_3rem]">
             <p className="text-sm font-medium">{label}</p>
             <div className="h-3 overflow-hidden rounded-full bg-[#f3eadc]">
-              <span
-                className={`block h-full rounded-full ${index % 2 === 0 ? "bg-[#18c6a4]" : "bg-[#ff6b4a]"}`}
+              <motion.span
+                className={`block h-full origin-left rounded-full ${index % 2 === 0 ? "bg-[#18c6a4]" : "bg-[#ff6b4a]"}`}
                 style={{ width: `${value}%` }}
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true, margin: "-10%" }}
+                transition={{ duration: 1.4, delay: index * 0.12, ease: [0.22, 1, 0.36, 1] }}
               />
             </div>
-            <p className="text-sm text-[#6b776f]">{value}%</p>
+            <p className="text-sm tabular-nums text-[#6b776f]">
+              <CountUp to={value} delay={index * 0.12} />%
+            </p>
           </div>
         ))}
       </div>
@@ -740,7 +671,7 @@ function ProjectCard({
   project,
   index,
 }: {
-  project: (typeof projects)[number];
+  project: Dictionary["projects"]["items"][number];
   index: number;
 }) {
   return (
@@ -754,7 +685,7 @@ function ProjectCard({
       }
       className="group rounded-[28px_8px_28px_8px] border border-[#e2d8c9] bg-white p-3 outline-none hover:shadow-[0_24px_80px_rgba(72,48,30,0.12)] focus-visible:ring-2 focus-visible:ring-[#ff6b4a]"
     >
-      <div className={`relative min-h-[260px] overflow-hidden rounded-[22px_6px_22px_6px] bg-gradient-to-br ${project.palette} p-5`}>
+      <div className={`relative min-h-[260px] overflow-hidden rounded-[22px_6px_22px_6px] bg-gradient-to-br ${projectPalettes[index]} p-5`}>
         <div className="absolute inset-x-0 bottom-0 h-20 bg-[repeating-linear-gradient(135deg,rgba(23,33,28,0.18)_0_2px,transparent_2px_10px)]" />
         <div className="relative mx-auto max-w-md rounded-[24px_8px_24px_8px] border border-white/75 bg-white/80 p-4 shadow-[0_22px_60px_rgba(72,48,30,0.14)] backdrop-blur transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 group-hover:-translate-y-2">
           <div className="mb-4 flex items-center gap-2">
@@ -795,24 +726,6 @@ function ProjectCard({
   );
 }
 
-function OutcomeItem({ outcome }: { outcome: IconCard }) {
-  const Icon = outcome.icon;
-
-  return (
-    <article className="flex gap-4 rounded-[24px_8px_24px_8px] border border-[#e2d8c9] bg-white p-4">
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-[16px_5px_16px_5px] bg-[#ffe6d7]">
-        <Icon className="size-5" aria-hidden="true" />
-      </span>
-      <div>
-        <h3 className="font-semibold">{outcome.title}</h3>
-        <p className="mt-1 text-sm leading-6 text-[#53605a]">
-          {outcome.description}
-        </p>
-      </div>
-    </article>
-  );
-}
-
 type FormData = {
   name: string;
   email: string;
@@ -823,6 +736,8 @@ type FormData = {
 };
 
 function LeadForm() {
+  const { t } = useLocale();
+  const f = t.form;
   const [step, setStep] = useState<1 | 2>(1);
   const [form, setForm] = useState<FormData>({
     name: "",
@@ -855,18 +770,18 @@ function LeadForm() {
   function goToStep2(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (form.name.trim().length < 2) errs.name = "Indiquez votre nom complet.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Adresse email invalide.";
-    if (form.phone.trim().length < 8) errs.phone = "Ajoutez un numéro valide.";
-    if (!form.siteType) errs.siteType = "Choisissez le type de site souhaité.";
-    if (form.description.trim().length < 12) errs.description = "Ajoutez quelques détails sur votre projet.";
+    if (form.name.trim().length < 2) errs.name = f.errors.name;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = f.errors.email;
+    if (form.phone.trim().length < 8) errs.phone = f.errors.phone;
+    if (!form.siteType) errs.siteType = f.errors.siteType;
+    if (form.description.trim().length < 12) errs.description = f.errors.description;
     if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     setStep(2);
   }
 
   async function onSubmit() {
     if (!form.contactMethod) {
-      setErrors({ contactMethod: "Choisissez comment vous souhaitez recevoir notre réponse." });
+      setErrors({ contactMethod: f.errors.contactMethod });
       return;
     }
     setStatus("loading");
@@ -889,9 +804,7 @@ function LeadForm() {
   // ── Success screen ──────────────────────────────────────────────────────────
   if (status === "success") {
     const byWhatsApp = form.contactMethod === "whatsapp";
-    const whatsappText = encodeURIComponent(
-      `Bonjour, je suis ${form.name}. Je viens de soumettre ma demande sur votre site pour un projet : ${form.siteType}.`
-    );
+    const whatsappText = encodeURIComponent(f.whatsappMessage(form.name, form.siteType));
     const whatsappUrl = `https://wa.me/${SITE_CONFIG.whatsappNumber}?text=${whatsappText}`;
 
     return (
@@ -918,7 +831,7 @@ function LeadForm() {
             transition={{ delay: 0.3, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="text-2xl font-semibold"
           >
-            Demande bien reçue !
+            {f.success.title}
           </motion.h3>
 
           <motion.p
@@ -928,8 +841,8 @@ function LeadForm() {
             className="mt-3 max-w-sm text-sm leading-6 text-[#53605a]"
           >
             {byWhatsApp
-              ? "Nous vous contacterons sur WhatsApp avec votre proposition personnalisée."
-              : `Nous vous enverrons votre proposition à l'adresse ${form.email}.`}
+              ? f.success.whatsapp
+              : f.success.email(form.email)}
           </motion.p>
 
 
@@ -943,7 +856,7 @@ function LeadForm() {
             >
               <Mail className="size-4 shrink-0 text-[#ff6b4a]" />
               <span className="text-[#53605a]">
-                Vérifiez votre boîte mail — et vos spams.
+                {f.success.checkInbox}
               </span>
             </motion.div>
           )}
@@ -972,10 +885,10 @@ function LeadForm() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[#6b776f]">
-              Étape {step} / 2
+              {f.step} {step} / 2
             </p>
             <h3 className="mt-2 text-2xl font-semibold">
-              {step === 1 ? "Décrire mon projet" : "Comment vous répondre ?"}
+              {step === 1 ? f.stepTitle1 : f.stepTitle2}
             </h3>
           </div>
           <span className="hidden size-12 items-center justify-center rounded-[18px_6px_18px_6px] bg-[#18c6a4] sm:flex">
@@ -999,18 +912,18 @@ function LeadForm() {
             >
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field error={errors.name}>
-                  <Label htmlFor="name">Nom et prénom</Label>
+                  <Label htmlFor="name">{f.name}</Label>
                   <Input
                     id="name"
                     value={form.name}
                     onChange={(e) => updateField("name", e.target.value)}
                     aria-invalid={Boolean(errors.name)}
                     className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-                    placeholder="Votre nom"
+                    placeholder={f.namePlaceholder}
                   />
                 </Field>
                 <Field error={errors.phone}>
-                  <Label htmlFor="phone">Téléphone / WhatsApp</Label>
+                  <Label htmlFor="phone">{f.phone}</Label>
                   <Input
                     id="phone"
                     value={form.phone}
@@ -1022,7 +935,7 @@ function LeadForm() {
                   />
                 </Field>
                 <Field error={errors.email} className="sm:col-span-2">
-                  <Label htmlFor="email">Adresse email</Label>
+                  <Label htmlFor="email">{f.email}</Label>
                   <Input
                     id="email"
                     type="email"
@@ -1030,31 +943,31 @@ function LeadForm() {
                     onChange={(e) => updateField("email", e.target.value)}
                     aria-invalid={Boolean(errors.email)}
                     className="mt-2 h-12 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-                    placeholder="vous@exemple.com"
+                    placeholder={f.emailPlaceholder}
                   />
                 </Field>
                 <Field error={errors.siteType} className="sm:col-span-2">
-                  <Label htmlFor="site-type">Type de site</Label>
+                  <Label htmlFor="site-type">{f.siteType}</Label>
                   <Select value={form.siteType} onValueChange={(v) => updateField("siteType", v)}>
                     <SelectTrigger id="site-type" aria-invalid={Boolean(errors.siteType)} className="mt-2 h-12 w-full rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]">
-                      <SelectValue placeholder="Choisissez une option" />
+                      <SelectValue placeholder={f.siteTypePlaceholder} />
                     </SelectTrigger>
                     <SelectContent className="border-[#e2d8c9] bg-white text-[#17211c]">
-                      {siteTypes.map((type) => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {f.siteTypes.map((type, i) => (
+                        <SelectItem key={type} value={dictionaries.fr.form.siteTypes[i]}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </Field>
                 <Field error={errors.description} className="sm:col-span-2">
-                  <Label htmlFor="description">Parlez-nous rapidement de votre projet</Label>
+                  <Label htmlFor="description">{f.description}</Label>
                   <Textarea
                     id="description"
                     value={form.description}
                     onChange={(e) => updateField("description", e.target.value)}
                     aria-invalid={Boolean(errors.description)}
                     className="mt-2 min-h-32 rounded-[14px_5px_14px_5px] border-[#e2d8c9] bg-[#fffaf2]"
-                    placeholder="Exemple : je veux présenter mon activité et recevoir plus de demandes de contact."
+                    placeholder={f.descriptionPlaceholder}
                   />
                 </Field>
               </div>
@@ -1062,7 +975,7 @@ function LeadForm() {
                 type="submit"
                 className="mt-6 h-14 w-full rounded-full bg-[#17211c] text-base font-semibold text-white hover:bg-[#2b372f]"
               >
-                Continuer
+                {f.continue}
                 <ArrowRight className="size-5" aria-hidden="true" />
               </Button>
             </motion.form>
@@ -1078,7 +991,7 @@ function LeadForm() {
               transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             >
               <p className="mb-4 text-sm text-[#53605a]">
-                Comment souhaitez-vous recevoir votre proposition ?
+                {f.howToReceive}
               </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 {/* WhatsApp option */}
@@ -1096,7 +1009,7 @@ function LeadForm() {
                   </span>
                   <div>
                     <p className="font-semibold">WhatsApp</p>
-                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">On vous envoie un message directement.</p>
+                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">{f.whatsappHint}</p>
                   </div>
                   {form.contactMethod === "whatsapp" && (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute top-3 right-3">
@@ -1119,8 +1032,8 @@ function LeadForm() {
                     <Mail className={`size-5 ${form.contactMethod === "email" ? "text-white" : "text-[#ff6b4a]"}`} aria-hidden="true" />
                   </span>
                   <div>
-                    <p className="font-semibold">Email</p>
-                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">Nous vous envoyons la proposition par email.</p>
+                    <p className="font-semibold">{f.emailLabel}</p>
+                    <p className="mt-1 text-xs leading-5 text-[#6b776f]">{f.emailHint}</p>
                   </div>
                 </button>
               </div>
@@ -1130,7 +1043,7 @@ function LeadForm() {
               )}
               {status === "error" && (
                 <div className="mt-4 rounded-[8px] border border-[#f0bcc9] bg-[#fff0f4] p-4 text-sm text-[#a83c58]">
-                  Une erreur est survenue. Veuillez réessayer.
+                  {f.genericError}
                 </div>
               )}
 
@@ -1140,7 +1053,7 @@ function LeadForm() {
                   onClick={() => setStep(1)}
                   className="h-14 rounded-full border border-[#e2d8c9] bg-white px-5 text-sm font-semibold text-[#17211c] transition hover:bg-[#f3eadc]"
                 >
-                  ← Retour
+                  {f.back}
                 </button>
                 <motion.button
                   type="button"
@@ -1165,7 +1078,7 @@ function LeadForm() {
                           transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
                           className="block size-5 rounded-full border-2 border-white/30 border-t-white"
                         />
-                        Envoi en cours...
+                        {f.sending}
                       </motion.span>
                     ) : (
                       <motion.span
@@ -1175,7 +1088,7 @@ function LeadForm() {
                         exit={{ opacity: 0, y: -10 }}
                         className="flex items-center gap-2"
                       >
-                        Recevoir ma proposition gratuite
+                        {f.submit}
                         <ArrowRight className="size-5" aria-hidden="true" />
                       </motion.span>
                     )}
@@ -1211,12 +1124,13 @@ function Field({
 
 
 function Footer() {
+  const { t } = useLocale();
   return (
-    <footer className="relative overflow-hidden border-t border-[#e2d8c9] bg-[#fff1d8] px-5 pb-8 pt-16 sm:px-8 lg:px-10">
+    <footer className="relative overflow-hidden border-t border-[#e2d8c9] bg-[#fff1d8] px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-16 sm:px-8 md:pb-8 lg:px-10">
       <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-[0.9fr_1.1fr]">
         <div>
           <h2 className="max-w-md text-4xl font-semibold leading-[0.96]">
-            Un site clair pour une entreprise plus visible.
+            {t.footer.title}
           </h2>
           <Button
             asChild
@@ -1225,47 +1139,78 @@ function Footer() {
               trackConversion("proposal_cta_click", { placement: "footer" })
             }
           >
-            <a href="#contact">Démarrer le brief</a>
+            <a href="#contact">{t.cta.startBrief}</a>
           </Button>
+          <div className="mt-6 flex items-center gap-3">
+            {[
+              { name: "Instagram", href: SITE_CONFIG.instagramUrl, icon: <InstagramIcon /> },
+              { name: "LinkedIn", href: SITE_CONFIG.linkedinUrl, icon: <LinkedinIcon /> },
+            ].map((social) => (
+              <a
+                key={social.name}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.name}
+                title={social.name}
+                className="flex size-11 items-center justify-center rounded-full border border-[#17211c]/15 bg-white/70 text-[#17211c] transition duration-300 hover:-translate-y-0.5 hover:border-[#17211c] hover:bg-[#17211c] hover:text-white"
+              >
+                {social.icon}
+              </a>
+            ))}
+          </div>
         </div>
         <div className="grid gap-8 sm:grid-cols-3">
           <FooterColumn
             title={SITE_CONFIG.brand}
             links={[
-              { label: "Services", href: "#services" },
-              { label: "Réalisations", href: "#realisations" },
-              { label: "Méthode", href: "#processus" },
-              { label: "Contact", href: "#contact" },
+              { label: t.nav.services, href: "#services" },
+              { label: t.nav.projects, href: "#realisations" },
+              { label: t.nav.method, href: "#processus" },
+              { label: t.nav.contact, href: "#contact" },
             ]}
           />
           <FooterColumn
-            title="Types de site"
-            links={[
-              { label: "Site vitrine", href: "#services" },
-              { label: "E-commerce", href: "#services" },
-              { label: "Landing page", href: "#services" },
-              { label: "Refonte", href: "#services" },
-            ]}
+            title={t.footer.siteTypesColumn}
+            links={t.footer.siteTypeLinks.map((label) => ({ label, href: "#services" }))}
           />
           <FooterColumn
-            title="Support"
+            title={t.footer.supportColumn}
             links={[
-              { label: "Proposition", href: "#contact" },
-              { label: "Confidentialité", href: "#contact" },
+              { label: t.footer.proposal, href: "#contact" },
+              { label: t.footer.privacy, href: "#contact" },
             ]}
           />
         </div>
       </div>
       <div className="mx-auto mt-16 w-full max-w-7xl">
         <div className="flex flex-col gap-5 border-t border-[#e2d8c9] pt-6 text-xs text-[#6b776f] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {SITE_CONFIG.brand}. Tous droits réservés.</p>
-          <p>Agence growth marketing</p>
+          <p>© {new Date().getFullYear()} {SITE_CONFIG.brand}. {t.footer.rights}</p>
+          <p>{t.footer.tagline}</p>
         </div>
       </div>
-      <p aria-hidden="true" className="pointer-events-none mt-10 select-none text-center text-[clamp(4rem,16vw,13rem)] font-black leading-[0.72] tracking-normal text-[#17211c]">
-        GROWTH MARKETING
+      <p aria-hidden="true" className="pointer-events-none mt-10 select-none text-center text-[13vw] font-black leading-[0.85] tracking-normal text-[#17211c] md:text-[clamp(4rem,16vw,13rem)] md:leading-[0.72]">
+        {t.bigText[0]}<br className="md:hidden" /> {t.bigText[1]}
       </p>
     </footer>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+function LinkedinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" fill="currentColor" aria-hidden="true">
+      <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9.75h4v11.5H3V9.75Zm6.5 0h3.83v1.57h.06c.53-1 1.84-2.07 3.78-2.07 4.04 0 4.78 2.66 4.78 6.1v5.9h-4v-5.23c0-1.25-.02-2.85-1.74-2.85-1.74 0-2 1.36-2 2.76v5.32h-4V9.75Z" />
+    </svg>
   );
 }
 
@@ -1295,6 +1240,7 @@ function FooterColumn({
 }
 
 function MobileStickyCta() {
+  const { t } = useLocale();
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#e2d8c9] bg-white/92 p-3 backdrop-blur md:hidden">
       <Button
@@ -1305,7 +1251,7 @@ function MobileStickyCta() {
         }
       >
         <a href="#contact">
-          Recevoir ma proposition gratuite
+          {t.cta.proposalFree}
           <ChevronRight className="size-5" aria-hidden="true" />
         </a>
       </Button>

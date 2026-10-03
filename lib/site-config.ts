@@ -7,4 +7,6 @@ export const SITE_CONFIG = {
   brand: "EngiGrowth",
   whatsappNumber,
   whatsappUrl: `https://wa.me/${whatsappNumber}?text=${whatsappText}`,
+  instagramUrl: "https://www.instagram.com/engi_growth/",
+  linkedinUrl: "https://www.linkedin.com/company/engigrowth/",
 };
