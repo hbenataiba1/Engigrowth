@@ -14,11 +14,12 @@ export type Dictionary = {
   switchLabel: string;
   switchShort: string;
   switchHref: string;
-  cta: { proposal: string; proposalFree: string; startBrief: string };
+  cta: { proposal: string; proposalFree: string };
   hero: {
     title: string;
     description: string;
     imageAlt: string;
+    imageTitle: string;
     cardMessage: string;
     cardMessageSub: string;
     cardDesign: string;
@@ -36,7 +37,12 @@ export type Dictionary = {
   projects: {
     eyebrow: string;
     title: string;
-    items: { name: string; industry: string; description: string }[];
+    items: {
+      name: string;
+      industry: string;
+      description: string;
+      image?: { alt: string; title: string; caption: string };
+    }[];
   };
   process: {
     title: string;
@@ -83,7 +89,7 @@ export type Dictionary = {
     whatsappMessage: (name: string, siteType: string) => string;
   };
   footer: {
-    title: string;
+    slogan: string;
     brandColumn: string;
     siteTypesColumn: string;
     supportColumn: string;
@@ -123,13 +129,14 @@ const fr: Dictionary = {
   cta: {
     proposal: "Recevoir une proposition",
     proposalFree: "Recevoir ma proposition gratuite",
-    startBrief: "Démarrer le brief",
   },
   hero: {
     title: "Attirez plus de clients avec un site qui travaille pour votre croissance.",
     description:
       "Gagnez en visibilité, inspirez confiance dès la première visite et transformez votre présence en ligne en nouvelles opportunités pour votre entreprise.",
-    imageAlt: "Entrepreneur travaillant sur son ordinateur",
+    imageAlt:
+      "Entrepreneur travaillant sur son site web avec EngiGrowth, agence de création de sites web au Maroc",
+    imageTitle: "Création de site web professionnel – EngiGrowth",
     cardMessage: "Message",
     cardMessageSub: "Offre claire",
     cardDesign: "Design premium",
@@ -203,21 +210,43 @@ const fr: Dictionary = {
         name: "Atlas Conseil",
         industry: "Cabinet de conseil",
         description: "Site vitrine premium orienté prise de rendez-vous B2B.",
+        image: {
+          alt: "Création du site web Atlas Conseil, cabinet de conseil au Maroc",
+          title: "Site web Atlas Conseil",
+          caption: "Conception d’un site web moderne pour Atlas Conseil",
+        },
       },
       {
         name: "Casa Home",
         industry: "Immobilier",
         description: "Landing page claire pour rassurer et générer des demandes.",
+        image: {
+          alt: "Création du site web immobilier Casa Home au Maroc",
+          title: "Site web immobilier Casa Home",
+          caption: "",
+        },
       },
       {
-        name: "Marrakech Atelier",
+        name: "Nova Atelier",
         industry: "Commerce en ligne",
         description: "Parcours e-commerce simple avec une marque bien mise en avant.",
+        image: {
+          alt: "Création du site e-commerce Nova Atelier au Maroc",
+          title: "Site e-commerce Nova Atelier",
+          caption:
+            "Conception d’une boutique en ligne moderne pour Nova Atelier, optimisée pour présenter les produits et faciliter les achats.",
+        },
       },
       {
         name: "Nour Santé",
         industry: "Service médical",
         description: "Interface rassurante, rapide sur mobile, pensée pour le contact.",
+        image: {
+          alt: "Création du site web médical Nour Santé au Maroc",
+          title: "Site web médical Nour Santé",
+          caption:
+            "Conception d’un site web moderne pour Nour Santé, avec présentation des services médicaux et prise de rendez-vous en ligne.",
+        },
       },
     ],
   },
@@ -286,7 +315,7 @@ const fr: Dictionary = {
       `Bonjour, je suis ${name}. Je viens de soumettre ma demande sur votre site pour un projet : ${siteType}.`,
   },
   footer: {
-    title: "Un site clair pour une entreprise plus visible.",
+    slogan: "Speed. Quality. Growth.",
     brandColumn: "",
     siteTypesColumn: "Types de site",
     supportColumn: "Support",
@@ -326,13 +355,14 @@ const en: Dictionary = {
   cta: {
     proposal: "Get a proposal",
     proposalFree: "Get my free proposal",
-    startBrief: "Start your brief",
   },
   hero: {
     title: "Win more clients with a website that works for your growth.",
     description:
       "Boost your visibility, build trust from the very first visit and turn your online presence into new opportunities for your business.",
-    imageAlt: "Entrepreneur working on a laptop",
+    imageAlt:
+      "Entrepreneur working on their website with EngiGrowth, a web design agency in Morocco",
+    imageTitle: "Professional website design – EngiGrowth",
     cardMessage: "Message",
     cardMessageSub: "Clear offer",
     cardDesign: "Premium design",
@@ -406,21 +436,43 @@ const en: Dictionary = {
         name: "Atlas Conseil",
         industry: "Consulting firm",
         description: "Premium business website focused on booking B2B meetings.",
+        image: {
+          alt: "Website design for Atlas Conseil, a consulting firm in Morocco",
+          title: "Atlas Conseil website",
+          caption: "Design of a modern website for Atlas Conseil",
+        },
       },
       {
         name: "Casa Home",
         industry: "Real estate",
         description: "A clear landing page that builds trust and generates enquiries.",
+        image: {
+          alt: "Website design for Casa Home, a real estate business in Morocco",
+          title: "Casa Home real estate website",
+          caption: "",
+        },
       },
       {
-        name: "Marrakech Atelier",
+        name: "Nova Atelier",
         industry: "Online store",
         description: "A simple e-commerce journey that puts the brand first.",
+        image: {
+          alt: "E-commerce website design for Nova Atelier in Morocco",
+          title: "Nova Atelier e-commerce website",
+          caption:
+            "Design of a modern online store for Nova Atelier, built to showcase products and make buying easy.",
+        },
       },
       {
         name: "Nour Santé",
         industry: "Medical service",
         description: "A reassuring, mobile-fast interface designed to drive contact.",
+        image: {
+          alt: "Website design for Nour Santé, a medical practice in Morocco",
+          title: "Nour Santé medical website",
+          caption:
+            "Design of a modern website for Nour Santé, presenting medical services and offering online appointment booking.",
+        },
       },
     ],
   },
@@ -495,7 +547,7 @@ const en: Dictionary = {
       `Hello, I'm ${name}. I just submitted a request on your website for a project: ${siteType}.`,
   },
   footer: {
-    title: "A clear website for a more visible business.",
+    slogan: "Speed. Quality. Growth.",
     brandColumn: "",
     siteTypesColumn: "Website types",
     supportColumn: "Support",

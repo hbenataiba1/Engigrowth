@@ -50,6 +50,13 @@ const projectPalettes = [
   "from-[#ddf7ee] via-[#fff7ea] to-[#ffe6d7]",
 ];
 
+const projectImages: (string | null)[] = [
+  "/atlas-conseil-site-web-cabinet-conseil-maroc.webp",
+  "/creation-site-web-immobilier-casa-home-maroc.webp",
+  "/creation-site-ecommerce-nova-atelier-maroc.webp",
+  "/creation-site-web-medical-nour-sante-maroc.webp",
+];
+
 const LocaleContext = createContext<{ locale: Locale; t: Dictionary }>({
   locale: "fr",
   t: dictionaries.fr,
@@ -374,9 +381,13 @@ function HeroVisual() {
       />
       <div className="relative mx-auto max-w-[540px]">
         <img
-          src="/hero-engigrowth.png"
+          src="/creation-site-web-entreprise-engigrowth-maroc.webp"
+          width={1000}
+          height={898}
+          fetchPriority="high"
           decoding="async"
           alt={t.hero.imageAlt}
+          title={t.hero.imageTitle}
           className="w-full rounded-[28px] object-contain ring-1 ring-black/5 shadow-[0_30px_80px_-30px_rgba(23,33,28,0.35)]"
         />
 
@@ -694,6 +705,21 @@ function ProjectCard({
             <span className="size-2.5 rounded-full bg-[#18c6a4]" />
             <span className="ml-2 h-6 flex-1 rounded-full bg-[#eef2ed]" />
           </div>
+          {projectImages[index] ? (
+            <figure>
+              <img
+                src={projectImages[index]!}
+                alt={project.image?.alt ?? project.name}
+                title={project.image?.title}
+                loading="lazy"
+                decoding="async"
+                className="aspect-[3/2] w-full rounded-2xl object-cover"
+              />
+              {project.image?.caption ? (
+                <figcaption className="sr-only">{project.image.caption}</figcaption>
+              ) : null}
+            </figure>
+          ) : (
           <div className="grid gap-4 sm:grid-cols-[0.86fr_1.14fr]">
             <div>
               <span className="block h-5 w-10/12 rounded-full bg-[#17211c]" />
@@ -708,6 +734,7 @@ function ProjectCard({
               ))}
             </div>
           </div>
+          )}
         </div>
       </div>
       <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-end sm:justify-between">
@@ -1129,19 +1156,18 @@ function Footer() {
     <footer className="relative overflow-hidden border-t border-[#e2d8c9] bg-[#fff1d8] px-5 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-16 sm:px-8 md:pb-8 lg:px-10">
       <div className="mx-auto grid w-full max-w-7xl gap-10 md:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <h2 className="max-w-md text-4xl font-semibold leading-[0.96]">
-            {t.footer.title}
-          </h2>
-          <Button
-            asChild
-            className="mt-7 h-11 rounded-full bg-[#ff6b4a] px-5 font-semibold text-white hover:bg-[#ec5738]"
-            onClick={() =>
-              trackConversion("proposal_cta_click", { placement: "footer" })
-            }
-          >
-            <a href="#contact">{t.cta.startBrief}</a>
-          </Button>
-          <div className="mt-6 flex items-center gap-3">
+          <a href="#accueil" className="inline-flex items-center gap-3" aria-label={t.homeLabel}>
+            <img
+              src="/logo-engigrowth.png"
+              alt=""
+              className="size-14 rounded-[16px_5px_16px_5px] bg-[#17211c] object-contain p-1.5"
+            />
+            <span className="text-xl font-semibold tracking-normal">{SITE_CONFIG.brand}</span>
+          </a>
+          <p className="mt-6 max-w-md text-4xl font-semibold leading-[0.96]">
+            {t.footer.slogan}
+          </p>
+          <div className="mt-7 flex items-center gap-3">
             {[
               { name: "Instagram", href: SITE_CONFIG.instagramUrl, icon: <InstagramIcon /> },
               { name: "LinkedIn", href: SITE_CONFIG.linkedinUrl, icon: <LinkedinIcon /> },
